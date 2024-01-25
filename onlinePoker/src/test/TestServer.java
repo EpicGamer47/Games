@@ -4,6 +4,7 @@ import java.util.Scanner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -11,6 +12,7 @@ public class TestServer {
 
 	public static void main(String[] args) throws IOException {
 		Scanner sc = new Scanner(System.in);
+		System.out.println("IP Address: " + InetAddress.getLocalHost().toString());
 		System.out.print("Enter Port Number: ");
 		int port = sc.nextInt();
 		sc.nextLine();
