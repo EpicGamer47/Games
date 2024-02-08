@@ -20,6 +20,15 @@ public class Hand
         cards.add(card1);
         cards.add(card2);
     }
+    
+    public Hand(byte[] bytes)
+    {
+    	cards = new ArrayList<Card>();
+    	
+    	for (byte b : bytes) {
+    		cards.add(new Card(b));
+    	}
+    }
 
     /**
      * Returns the numerical value of this hand according to the rules of blackjack
@@ -74,6 +83,8 @@ public class Hand
     {
         return cards;
     }
+    
+    
     
     /**
      * Returns the cards in this hand followed by their numerical value
