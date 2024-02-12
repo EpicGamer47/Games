@@ -25,10 +25,12 @@ public class Hand
      * Constructs a hand from an array of cards as bytes.
      * @param b The bytes.
      */
-    public Hand(byte[] b) {
+    public Hand(byte[] bytes)
+    {
     	cards = new ArrayList<Card>();
-    	for (int i = 0; i < b.length; i++) {
-    		cards.add(new Card(b[i]));
+    	
+    	for (byte b : bytes) {
+    		cards.add(new Card(b));
     	}
     }
 
@@ -85,6 +87,8 @@ public class Hand
     {
         return cards;
     }
+    
+    
     
     /**
      * Returns the cards in this hand followed by their numerical value
