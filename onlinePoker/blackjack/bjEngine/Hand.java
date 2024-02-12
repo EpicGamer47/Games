@@ -20,6 +20,17 @@ public class Hand
         cards.add(card1);
         cards.add(card2);
     }
+    
+    /**
+     * Constructs a hand from an array of cards as bytes.
+     * @param b The bytes.
+     */
+    public Hand(byte[] b) {
+    	cards = new ArrayList<Card>();
+    	for (int i = 0; i < b.length; i++) {
+    		cards.add(new Card(b[i]));
+    	}
+    }
 
     /**
      * Returns the numerical value of this hand according to the rules of blackjack

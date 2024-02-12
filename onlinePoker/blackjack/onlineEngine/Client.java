@@ -28,11 +28,28 @@ public class Client implements AutoCloseable {
 		return new String(buffer);
 	}
 	
+	public byte[] readBytes() throws IOException {
+		var in = server.getInputStream();
+		
+		int len = in.read();
+		byte[] buffer = new byte[len];
+		in.read(buffer);
+		
+		return buffer;
+	}
+	
 	public void write(String output) throws IOException {
 		var out = server.getOutputStream();
 		
 		out.write(output.length());
 		out.write(output.getBytes());
+	}
+	
+	public void writeBytes(byte[] buffer) throws IOException {
+		var out = server.getOutputStream();
+		
+		out.write(buffer.length);
+		out.write(buffer);
 	}
 
 	@Override

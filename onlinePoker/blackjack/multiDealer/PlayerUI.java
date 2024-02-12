@@ -5,6 +5,7 @@ import java.text.NumberFormat;
 import java.util.Scanner;
 
 import bjEngine.Blackjack;
+import bjEngine.Hand;
 import onlineEngine.Client;
 
 /**
@@ -140,7 +141,15 @@ public class PlayerUI
 	
     private void getDealersHandFromServer() {
 		System.out.println("Waiting for dealer hand...");
-		client.read();
+		Hand dh;
+		try {
+			dh = new Hand(client.readBytes());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+		bj.setDealersHand(dh);
 	}
 
 	/**

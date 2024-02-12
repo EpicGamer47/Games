@@ -1,11 +1,13 @@
 package multiDealer;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
 import bjEngine.Blackjack;
 import onlineEngine.Client;
+import onlineEngine.SingleServer;
 
 /**
  * A text based user interface that allows the user to
@@ -63,7 +65,8 @@ public class DealerUI
 //    	buffer();
     	
 //    	playPlayersHand();
-    	bj.playDealersHand();
+//    	bj.playDealersHand();
+    	playDealersHand();
     	buffer();
     	
 //    	displayResult();
@@ -177,6 +180,30 @@ public class DealerUI
 	    System.out.println("\nPlayer's updated money: " + nf.format(bj.getPlayersMoney()));
 	}
 
+	/**
+	 * Plays the dealer's hand
+	 */
+	private void playDealersHand() {
+//		bj.playDealersHand(); //uncomment for testing
+		var dh = bj.getDealersHand();
+		System.out.println(dh.toString());
+		while (dh.getValue() < 17) {
+			System.out.print("Enter your move (you must stand on 17): ");
+			String action = fromKeyboard.nextLine();
+			while (!(action.equals("h") || action.equals("hit") 
+					||  action.equals("s") || action.equals("stand"))) {
+				System.out.print(String.format("\nCurrent Hand: %s\nWhat would you like to do? (hit/stand): ",
+						dh.toString()));
+			}
+		}
+		//Send to client
+		try {
+			client.write(dh.toString());
+		} catch (IOException e) {
+			//Something messed up
+			e.printStackTrace();
+		}
+	}
 	/**
 	 * Returns the numeric representation of input or -1 if input is not numeric
 	 * @param input the value to be converted to a number
