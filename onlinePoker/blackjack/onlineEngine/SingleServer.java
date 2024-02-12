@@ -36,6 +36,13 @@ public class SingleServer implements AutoCloseable {
 		out.write(output.getBytes());
 	}
 	
+	public void writeBytes(byte[] buffer) throws IOException { 
+		var out = client.getOutputStream();
+		
+		out.write(buffer.length);
+		out.write(buffer);
+	}
+	
 	public void acceptClient() throws IOException {
 		client = socket.accept();
 		System.out.println("Connection from " + client.getInetAddress().toString());

@@ -18,7 +18,7 @@ public class DealerUI
 	private double MIN_BET = 50;
 	
 	private Blackjack bj; 
-	private Client client;
+	private SingleServer server;
 	private Scanner fromKeyboard;
 	private NumberFormat nf;
 	
@@ -26,12 +26,12 @@ public class DealerUI
 	 * Constructs a blackjack game with $1,000 in player bankroll
 	 * @throws Exception 
 	 */
-	public DealerUI(InetAddress server, int port) throws Exception
+	public DealerUI(int port) throws Exception
 	{
 	    this.bj = new Blackjack(1000);
 	    this.fromKeyboard = new Scanner(System.in);
 	    this.nf = NumberFormat.getCurrencyInstance();
-	    this.client = new Client(server, port);
+	    this.server = new SingleServer(port);
 	}
 	
 	/**
@@ -61,12 +61,12 @@ public class DealerUI
 	 */
     public void playHand()
     {
-//    	bj.placeBetAndDealCards(getValidBet());
-//    	buffer();
+    	bj.placeBetAndDealCards(getValidBet());
+    	buffer();
     	
 //    	playPlayersHand();
-//    	bj.playDealersHand();
-    	playDealersHand();
+    	bj.playDealersHand();
+//    	playDealersHand();
     	buffer();
     	
 //    	displayResult();
@@ -198,7 +198,7 @@ public class DealerUI
 		}
 		//Send to client
 		try {
-			client.write(dh.toString());
+			server.writeBytes(dh.toBytes());
 		} catch (IOException e) {
 			//Something messed up
 			e.printStackTrace();
