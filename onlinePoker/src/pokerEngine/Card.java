@@ -1,5 +1,7 @@
 package pokerEngine;
 
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -8,6 +10,8 @@ import java.util.List;
  */
 public class Card  implements Comparable<Card>
 {
+	static int[] order = {0, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+	
 	public static final List<String> suits = Arrays.asList(new String[] {"S", "H", "D", "C"});
 	
     private String suit;
@@ -74,6 +78,17 @@ public class Card  implements Comparable<Card>
     	}
     }
     
+    public String toName()
+    {
+    	switch (value) {
+    	case 1: return "Ace";
+    	case 11: return "Jack";
+    	case 12: return "Queen";
+    	case 13: return "King";
+    	default: return Integer.toString(value);
+    	}
+    }
+    
     public byte toByte() {
     	return (byte) (suits.indexOf(suit) * 13 + (value - 1));
     }
@@ -83,15 +98,20 @@ public class Card  implements Comparable<Card>
 	 */
 	@Override
 	public int compareTo(Card o) {
-		if (this.value == 1)
-			return 1;
-		else if (o.value == 1)
-			return -1;
-		else if (this.value != o.value)
-			return this.value - o.value;
+		if (this.value != o.value)
+			return order[o.value - 1] - order[value - 1];
 		
-		int suitDifference = suits.indexOf(this.suit) - suits.indexOf(o.suit);
+		int suitDifference = suits.indexOf(o.suit) - suits.indexOf(this.suit);
 		
 		return suitDifference;
+	}
+	
+	public static byte[] cardsToBytes(ArrayList<Card> cards) {
+		byte[] out = new byte[cards.size()];
+		
+		for (int i = 0; i < out.length; i++)
+			out[i] = cards.get(i).toByte();
+		
+		return out;
 	}
 }
