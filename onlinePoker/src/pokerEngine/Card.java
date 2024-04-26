@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import processing.core.PApplet;
+import processing.core.PImage;
+
 /**
  * Represents a playing card
  */
@@ -89,8 +92,40 @@ public class Card  implements Comparable<Card>
     	}
     }
     
+    /**
+     * Returns a single byte representing this card.
+     * @return A byte representing this card.
+     */
     public byte toByte() {
     	return (byte) (suits.indexOf(suit) * 13 + (value - 1));
+    }
+    
+    /**
+     * Draws this card to a specified location on the window.
+     * @param a The window PApplet
+     * @param x The x-coordinate of the card.
+     * @param y The y-coordinate of the card.
+     */
+    public void draw(PApplet a, float x, float y) {
+    	String path = "cards/";
+    	switch (value) {
+    	case 1: path += "ace";
+    	case 11: path += "jack";
+    	case 12: path += "queen";
+    	case 13: path += "king";
+    	default: path += value;
+    	}
+    	
+    	switch (suit) {
+    	case "S": path += "spades";
+    	case "H": path += "hearts";
+    	case "D": path += "diamonds";
+    	default: path += "clubs";
+    	}
+    	
+    	path += ".GIF";
+    	PImage img = a.loadImage(path);
+    	a.image(img, x, y);
     }
     
     /**
@@ -106,6 +141,11 @@ public class Card  implements Comparable<Card>
 		return suitDifference;
 	}
 	
+	/**
+	 * Converts a list of cards into an array of bytes
+	 * @param cards The cards to be converted
+	 * @return An array, with each card in cards converted into a byte in the same position
+	 */
 	public static byte[] cardsToBytes(ArrayList<Card> cards) {
 		byte[] out = new byte[cards.size()];
 		
