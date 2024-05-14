@@ -12,8 +12,6 @@ import java.util.Scanner;
 
 public class Board {
 	private static Piece row1[] = {ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
-	
-	public static boolean FILL = true;
 
 	public static int MOVE_NUM = 0x000F; // shift 0
 	public static int MOVE_LETTER = 0x00F0; // shift 4
@@ -26,6 +24,7 @@ public class Board {
 	protected long black;
 	protected long exists;
 	
+	protected boolean turn; // true = white, false = black
 	protected boolean rightToCastleK_W;
 	protected boolean rightToCastleQ_W;
 	protected boolean rightToCastleK_B;
@@ -38,13 +37,13 @@ public class Board {
 	}
 	
 	public Board(boolean fill) {
-		if (!fill) {
-			board = new Piece[8 * 8];
-			resetFlags();
+		if (fill) {
+			reset();
 			return;
 		}
 
-		reset();
+		board = new Piece[8 * 8];
+		resetFlags();
 	}
 
 	private void reset() {
@@ -52,19 +51,24 @@ public class Board {
 		
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
-			board[1 * 8 + i] = Piece.PAWN;
-			board[6 * 8 + i] = Piece.PAWN;
+//			board[1 * 8 + i] = Piece.PAWN;
+//			board[6 * 8 + i] = Piece.PAWN;
+			board[3 * 8 + i] = Piece.PAWN;
+			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-		black = 0xFFFF_0000_0000_0000L;
-		white = 0x0000_0000_0000_FFFFL;
+//		black = 0xFFFF_0000_0000_0000L;
+//		white = 0x0000_0000_0000_FFFFL;
+		black = 0xFF00_00FF_0000_0000L;
+		white = 0x0000_0000_FF00_00FFL;
 		exists = black | white;
 		
 		resetFlags();
 	}
 	
 	private void resetFlags() {
+		turn = true;
 		rightToCastleK_W = true;
 		rightToCastleQ_W = true;
 		rightToCastleK_B = true;
@@ -126,16 +130,53 @@ public class Board {
 	public boolean move(int n, int l, int dN, int dL) {
 		var move = isValidMove(n, l, dN, dL);
 		
-		if (move == null)
+		if (move == null) {
+			System.out.println(String.format("FAIL %d %d %d %d", n, l, dN, dL));
 			return false;
+		}
+		
+		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
 		
 		if (move == DOUBLE)
 			lastDouble = n;
 		else
 			lastDouble = -1;
 		
+		if (board[l * 8 + n] == KING) {
+			if (turn) {
+				rightToCastleK_W = false;
+				rightToCastleQ_W = true;
+			}
+			else {
+				rightToCastleK_B = false;
+				rightToCastleQ_B = true;
+			}
+		}
+			
+		if (board[l * 8 + n] == ROOK) {
+			if (turn && l == 0) {
+				if (n == 0)
+					rightToCastleQ_W = false;
+				else if (n == 7)
+					rightToCastleK_W = false;
+			}
+			else if (!turn && l == 7) {
+				if (n == 0)
+					rightToCastleQ_B = false;
+				else if (n == 7)
+					rightToCastleK_B = false;
+			}
+		
+			System.out.println(String.format("%b %b %b %b",
+					rightToCastleK_W,
+					rightToCastleQ_W,
+					rightToCastleK_B,
+					rightToCastleQ_B));
+		}
+		
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
+		long k1, k2, s1, s2;
 		
 		switch (move) {
 		case DOUBLE:
@@ -146,7 +187,7 @@ public class Board {
 			exists = exists & (~i);
 			exists = exists | j;
 			
-			if ((white & i) > 0) {
+			if (turn) {
 				black = black & (~j);
 				white = white & (~i);
 				white = white | j;
@@ -156,35 +197,74 @@ public class Board {
 				black = black & (~i);
 				black = black | j;
 			}
-			
 			break;
 		case EN_PASSANT:
 			board[dL * 8 + dN] = board[l * 8 + n];
 			board[l * 8 + n] = null;
+			board[l * 8 + dN] = null;
 			
-			long k = 1L << (l * 8 + dN);
+			k1 = 1L << (l * 8 + dN); // en-passanted pawn
 			
 			exists = exists & (~i);
-			exists = exists & (~k);
+			exists = exists & (~k1);
 			exists = exists | j;
 			
-			if ((white & i) > 0) {
-				black = black & (~k);
+			if (turn) {
+				black = black & (~k1);
 				white = white & (~i);
 				white = white | j;
 			}
 			else {
-				white = white & (~k);
+				white = white & (~k1);
 				black = black & (~i);
 				black = black | j;
 			}
 			break;
 		case CASTLE_KING:
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 6] = KING;
+			board[l * 8 + 5] = ROOK;
+			
+			s1 = 0b0110L << (l * 8 + 4);
+			s2 = 0b1001L << (l * 8 + 4);
+			
+			exists = exists & (~s2);
+			exists = exists | s1;
+			
+			if (turn) {
+				white = white & (~s2);
+				white = white | s1;
+			}
+			else {
+				black = black & (~s2);
+				black = black | s1;
+			}
 			break;
 		case CASTLE_QUEEN:
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 2] = KING;
+			board[l * 8 + 3] = ROOK;
+			
+			s1 = 0b01100L << (l * 8 + 0);
+			s2 = 0b10001L << (l * 8 + 0);
+			
+			exists = exists & (~s2);
+			exists = exists | s1;
+			
+			if (turn) {
+				white = white & (~s2);
+				white = white | s1;
+			}
+			else {
+				black = black & (~s2);
+				black = black | s1;
+			}
 			break;
 		}
 		
+		turn = !turn;
 		return true;
 	}
 	
@@ -195,7 +275,7 @@ public class Board {
 		long i = 1L << (l * 8 + n);
 		long j = 1L << (dL * 8 + dN);
 		
-		if ((exists & i) == 0)
+		if (!canMoveFrom(n, l))
 			return null;
 
 		Piece p = board[l * 8 + n];
@@ -251,14 +331,49 @@ public class Board {
 		return null;
 	}
 
+	public boolean canMoveFrom(int n, int l) {
+		long i = 1L << (l * 8 + n);
+		
+		if (turn)
+			return (white & i) != 0;
+		else
+			return (black & i) != 0;
+	}
+
+	// expanded bc this is so unreadable
+	// implies king and rook are on starting squares,
+	// if the board has the right to castle.
+	// note: check for correct rook
 	private boolean isCastleKing(int n, int l, int dN, int dL) {
-		// TODO Auto-generated method stub
-		return false;
+		if (turn) {
+			if (!rightToCastleK_W || !(dN == 7 && dL == 0))
+				return false;
+		}
+		else {
+			if (!rightToCastleK_B || !(dN == 7 && dL == 7))
+				return false;
+		}
+			
+		
+		long s = 0b0110L << (l * 8 + 4);
+		
+		return (exists & s) == 0;
 	}
 	
 	private boolean isCastleQueen(int n, int l, int dN, int dL) {
-		// TODO Auto-generated method stub
-		return false;
+		if (turn) {
+			if (!rightToCastleQ_W || !(dN == 0 && dL == 0))
+				return false;
+		}
+		else {
+			if (!rightToCastleQ_B || !(dN == 0 && dL == 7))
+				return false;
+		}
+			
+		
+		long s = 0b01110L << (l * 8);
+		
+		return (exists & s) == 0;
 	}
 
 	private boolean isEnPassant(int n, int l, int dN, int dL) {

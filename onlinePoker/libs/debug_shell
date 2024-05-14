@@ -1,0 +1,25 @@
+System.out.println(String.format("%64s", Long.toBinaryString(exists)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(black)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(white)).replace(' ', '0'));
+System.out.println("7654321_7654321_7654321_7654321_7654321_7654321_7654321_76543210");
+System.out.println(String.format("%64s", Long.toBinaryString(s2)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(s1)).replace(' ', '0'));
+System.out.println("7654321_7654321_7654321_7654321_7654321_7654321_7654321_76543210");
+System.out.println(String.format("%64s", Long.toBinaryString(s)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(k)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(i)).replace(' ', '0'));
+System.out.println(String.format("%64s", Long.toBinaryString(j)).replace(' ', '0'));
+System.out.println("7654321_7654321_7654321_7654321_7654321_7654321_7654321_76543210");
+System.out.println(String.format("%64s", Long.toBinaryString(1 << -5)).replace(' ', '0'));
+
+1 << (57)
+l * 8 + n
+
+n == dN && (exists & i) == 0 && ((l == 1 && dL == 3) || (l == 6 && dL == 4))
+(exists & j) == 0 || ((enemy & j) == 0 && p.canMoveAttack))
+
+lastDouble == dN &&
+deltaL * deltaL == 1 && 
+(exists & k) != 0 && board[l * 8 + dN] == PAWN
+
+(turn && (white & i) != 0) || (!turn && (black & i) != 0)

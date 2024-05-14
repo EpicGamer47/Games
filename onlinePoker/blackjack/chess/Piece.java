@@ -10,9 +10,9 @@ public enum Piece {
 	QUEEN(new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}}),
 	KING(new int[][] {}, new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}});
 	
-	private String name;
-	public static int WHITE = 0;
-	public static int BLACK = 6;
+	// double as ascii constants
+	public static final int WHITE = 0;
+	public static final int BLACK = 6;
 	
 	public int[][] repeat;
 	public int[][] single;

@@ -18,7 +18,7 @@ public class Main extends PApplet {
 
 	@Override
 	public void setup() {
-		b = new ProcessingBoard(this, true);
+		b = new ProcessingBoard(this);
 		frameRate(30);
 	}
 	
@@ -30,18 +30,7 @@ public class Main extends PApplet {
 	
 	@Override
 	public void mouseClicked() {
-		int n = (mouseX - 100) / 75, l = (mouseY - 100) / 75;
-		
-		if (Board.isValidIndex(n, l)) {
-			if (b.p == null || (b.p.x == n && b.p.y == l)) {
-				b.p = new Point(n, l);
-			}
-			else {
-				b.move(b.p.x, b.p.y, n, l);
-				b.p = null;
-			}
-		}
-
+		b.click(mouseX, mouseY);
 	}
 	
 	@Override
