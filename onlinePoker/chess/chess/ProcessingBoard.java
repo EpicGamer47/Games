@@ -34,15 +34,24 @@ public class ProcessingBoard extends Board {
 		
 		for (int l = 0; l < 8; l++) {
 			for (int n = 0; n < 8; n++) {
-				drawSquare(n, l);
+				drawSquare(n, l, 100, 100, true);
+				
+				drawSquare(n, l, parent.width - 100 - width * 8, 100, false);
 			}
 		}
+		
+		parent.fill(0x55000000);
+		
+		if (turn)
+			parent.rect(parent.width - 100 - width * 8, 100, width * 8, width * 8);
+		else
+			parent.rect(100, 100, width * 8, width * 8);
 	}
 
-	private void drawSquare(int n, int l) {
+	private void drawSquare(int n, int l, int x, int y, boolean side) {
 		int dN, dL;
 		
-		if (turn) {
+		if (side) {
 			dN = n;
 			dL = 7 - l;
 		}
@@ -51,8 +60,8 @@ public class ProcessingBoard extends Board {
 			dL = l;
 		}
 		
-		int x1 = 100 + width * (dN);
-		int y1 = 100 + width * (dL);
+		int x1 = x + width * (dN);
+		int y1 = y + width * (dL);
 		
 		int color = (l + n) % 2 == 0 ? 0xFFeeeed2 : 0xFF769656;
 		
@@ -81,13 +90,19 @@ public class ProcessingBoard extends Board {
 	}
 
 	public void click(int mouseX, int mouseY) {
-		int n = (mouseX - 100) / width, l = (mouseY - 100) / width;
+		int n, l;
 
-		if (isPlayerWhite)
+		if (turn) {
+			n = (mouseX - 100) / width;
+			l = (mouseY - 100) / width;
 			l = 7 - l;
-		else
+		}
+		else {
+			n = (mouseX - (parent.width - 100 - width * 8)) / width;
+			l = (mouseY - 100) / width;
 			n = 7 - n;
-		
+		}
+
 		if (Board.isValidIndex(n, l)) {
 			if (lastClick == null) {
 				if (!canMoveFrom(n, l))
