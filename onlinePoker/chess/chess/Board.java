@@ -51,17 +51,17 @@ public class Board {
 		
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
-//			board[1 * 8 + i] = Piece.PAWN;
-//			board[6 * 8 + i] = Piece.PAWN;
-			board[3 * 8 + i] = Piece.PAWN;
-			board[4 * 8 + i] = Piece.PAWN;
+			board[1 * 8 + i] = Piece.PAWN;
+			board[6 * 8 + i] = Piece.PAWN;
+//			board[3 * 8 + i] = Piece.PAWN;
+//			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-//		black = 0xFFFF_0000_0000_0000L;
-//		white = 0x0000_0000_0000_FFFFL;
-		black = 0xFF00_00FF_0000_0000L;
-		white = 0x0000_0000_FF00_00FFL;
+		black = 0xFFFF_0000_0000_0000L;
+		white = 0x0000_0000_0000_FFFFL;
+//		black = 0xFF00_00FF_0000_0000L;
+//		white = 0x0000_0000_FF00_00FFL;
 		exists = black | white;
 		
 		resetFlags();

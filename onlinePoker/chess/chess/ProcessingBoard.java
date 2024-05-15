@@ -42,7 +42,7 @@ public class ProcessingBoard extends Board {
 	private void drawSquare(int n, int l) {
 		int dN, dL;
 		
-		if (isPlayerWhite) {
+		if (turn) {
 			dN = n;
 			dL = 7 - l;
 		}
