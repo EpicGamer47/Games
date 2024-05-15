@@ -63,6 +63,8 @@ public class PlayerUI
     	bj.placeBetAndDealCards(getValidBet());
     	buffer();
     	
+    	getDealersHandFromServer();
+    	
     	playPlayersHand();
     	getDealersHandFromServer();
     	buffer();
@@ -140,6 +142,8 @@ public class PlayerUI
 	}
 	
     private void getDealersHandFromServer() {
+    	client.write();
+    	
 		System.out.println("Waiting for dealer hand...");
 		Hand dh;
 		try {

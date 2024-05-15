@@ -2,10 +2,12 @@ package multiDealer;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
 import bjEngine.Blackjack;
+import bjEngine.Hand;
 import onlineEngine.Client;
 import onlineEngine.SingleServer;
 
@@ -40,20 +42,9 @@ public class DealerUI
      */
     private double getValidBet()
     {
-    	String bet = "-1";
-    	do {
-    		System.out.print(String.format("\nPlease enter a bet from %s to %s: ", nf.format(MIN_BET), nf.format(bj.getPlayersMoney())));
-    		bet = fromKeyboard.nextLine();
-    		
-    		switch (bet) {
-    		case "all":   bet = Double.toString(bj.getPlayersMoney()); break;
-    		case "half":  bet = Double.toString(bj.getPlayersMoney()/2); break;
-    		case "manny": bet = "69"; break;
-    		case "min":   bet = Double.toString(MIN_BET); break;
-    		}
-    	} while (stringToNumber(bet) < MIN_BET || stringToNumber(bet) > bj.getPlayersMoney());
-    	
-    	return stringToNumber(bet);
+    	System.out.println("Waiting for player bet...");
+		byte[] bytes = server.readBytes();
+		return ByteBuffer.wrap(bytes).getDouble();
     }
     
 	/**
@@ -186,7 +177,9 @@ public class DealerUI
 	private void playDealersHand() {
 //		bj.playDealersHand(); //uncomment for testing
 		var dh = bj.getDealersHand();
-		System.out.println(dh.toString());
+		
+		System.out.println("Players's card: " + bj.getPlayersHand().toString());
+		
 		while (dh.getValue() < 17) {
 			System.out.print("Enter your move (you must stand on 17): ");
 			String action = fromKeyboard.nextLine();
