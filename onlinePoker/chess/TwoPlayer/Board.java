@@ -33,6 +33,7 @@ public class Board {
 	protected boolean rightToCastleK_B;
 	protected boolean rightToCastleQ_B;
 	protected int lastDouble;
+	protected boolean inCheck;
 	
 	public Board() {
 		board = new Piece[8 * 8];
@@ -77,6 +78,7 @@ public class Board {
 		rightToCastleK_B = true;
 		rightToCastleQ_B = true;
 		lastDouble = -1;
+		inCheck = false;
 	}
 	
 	public List<int[]> getAllMoves() {
@@ -168,8 +170,6 @@ public class Board {
 			System.out.println(String.format("FAIL %d %d %d %d", n, l, dN, dL));
 			return false;
 		}
-		
-		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
 		
 		if (move == DOUBLE)
 			lastDouble = n;
@@ -297,6 +297,8 @@ public class Board {
 			}
 			break;
 		}
+		
+		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, isInCheck(turn)));
 		
 		turn = !turn;
 		return true;
@@ -451,6 +453,65 @@ public class Board {
 		long j = 1L << (dN + dL * 8);
 		
 		return (enemy & j) != 0;
+	}
+	
+	public boolean isInCheck(boolean side) {
+		Point p = findKing(side);
+		int n = p.x, l = p.y;
+		long enemy = side ? black : white;
+		int sign = side ? -1 : 1; // get the enemy's sign
+		
+		for (int[] d : AllMoves.single) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			if (isValidCapture(n, l, dN, dL, enemy))
+				for (int[] D : board[n + l * 8].single)
+					if (Arrays.equals(d, D))
+						return true;
+		}
+		
+		for (int[] d : AllMoves.repeat) {
+			int iN = n + d[0], iL = l + d[1] * sign;
+			
+			while (isValidSpace(n, l, iN, iL, enemy) && 
+					!isValidCapture(n, l, iN, iL, enemy)) {
+				iN += d[0];
+				iL += d[1] * sign;
+			}
+			
+			if (isValidCapture(n, l, iN, iL, enemy))
+				for (int[] D : board[n + l * 8].repeat)
+					if (Arrays.equals(d, D))
+						return true;
+		}
+		
+		for (int[] d : AllMoves.attack) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			if (isValidCapture(n, l, dN, dL, enemy))
+				for (int[] D : board[n + l * 8].attack)
+					if (Arrays.equals(d, D))
+						return true;
+		}
+		
+		return false;
+	}
+
+	public Point findKing(boolean side) {
+		int n, l;
+		
+		long hero = side ? white : black;
+		
+		for (n = 0; n < 8; n++) {
+			for (l = 0; l < 8; l++) {
+				long i = 1L << (n + l * 8);
+				
+				if ((hero & i) != 0 && board[n + l * 8] == KING)
+					return new Point(n, l);
+			}
+		}
+		
+		throw new IllegalStateException("Each color should always have a king on the board");
 	}
 
 	//DEBUG

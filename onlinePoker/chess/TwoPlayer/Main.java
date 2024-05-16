@@ -1,6 +1,7 @@
 package TwoPlayer;
 
 import java.awt.Point;
+import java.util.Arrays;
 
 import processing.core.PApplet;
 
@@ -9,6 +10,9 @@ public class Main extends PApplet {
 	
 	public static void main(String[] args) {
 		PApplet.main("TwoPlayer.Main");
+//		System.out.println(Arrays.deepToString(AllMoves.moves.single));
+//		System.out.println(Arrays.deepToString(AllMoves.moves.repeat));
+//		System.out.println(Arrays.deepToString(AllMoves.moves.attack));
 	}
 	
 	@Override
