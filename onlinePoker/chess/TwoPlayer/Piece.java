@@ -1,4 +1,4 @@
-package chess;
+package TwoPlayer;
 
 import processing.core.PApplet;
 

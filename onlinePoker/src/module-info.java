@@ -1,13 +1,13 @@
 module onlinePoker {
 	exports singlePlayer;
 	exports pokerEngine;
-	exports chess;
+	exports TwoPlayer;
 	exports test;
 	exports onlineEngine;
 	exports bjEngine;
 	exports multiDealer;
 
-	opens chess to core;
+	opens TwoPlayer to core;
 	requires core;
 	requires java.desktop;
 }

@@ -1,14 +1,17 @@
-package chess;
+package TwoPlayer;
 
-import static chess.Piece.*;
-import static chess.Moves.*;
+import static TwoPlayer.Moves.*;
+import static TwoPlayer.Piece.*;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Board {
 	private static Piece row1[] = {ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
@@ -76,8 +79,8 @@ public class Board {
 		lastDouble = -1;
 	}
 	
-	public List<Integer> getAllMoves() {
-		var out = new ArrayList<Integer>();
+	public List<int[]> getAllMoves() {
+		var out = new ArrayList<int[]>();
 		
 		for (int n = 0; n < 8; n++) {
 			for (int l = 0; l < 8; l++) {
@@ -88,45 +91,76 @@ public class Board {
 		return out;
 	}
 	
-	private List<Integer> getAllMoves(int n, int l) {
-		int i = 1 << (n + l * 8);
+	public List<int[]> getAllMoves(int n, int l) {
+		long i = 1L << (n + l * 8);
 		
 		if ((exists & i) == 0)
 			return Collections.emptyList();
 		
-		var out = new ArrayList<Integer>();
+		var out = new ArrayList<int[]>();
 		
-		long enemy = ((white & i) > 0) ? black : white;
-		int side = ((white & i) > 0) ? 1 : -1;
+		long enemy = turn ? black : white;
+		int sign = turn ? 1 : -1;
 		Piece p = board[l * 8 + n];
 		
 		for (int[] d : p.single) {
-			int j = isValidSpace(n, d[0], l, d[1] * side, p, enemy);
+			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (j != -1)
-				out.add(j);
+			if (isValidSpace(n, l, dN, dL, enemy))
+				out.add(new int[] {n, l, dN, dL});
 		}
 		
 		for (int[] d : p.repeat) {
-			int iN = n, iL = l;
+			int iN = n + d[0], iL = l + d[1] * sign;
 			
-			int j = isValidSpace(n, d[0], l, d[1] * side, p, enemy);
-			
-			while (j > 0) {
-				out.add(j);
+			while (isValidSpace(n, l, iN, iL, enemy) && 
+					!isValidCapture(n, l, iN, iL, enemy)) {
+				out.add(new int[] {n, l, iN, iL});
+				iN += d[0];
+				iL += d[1] * sign;
 			}
+			
+			if (isValidCapture(n, l, iN, iL, enemy))
+				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
-			int j = isValidAttackSpace(n, d[0], l, d[1] * side, enemy);
+			int dN = n + d[0], dL = d[1] * sign;
 			
-			if (j != -1)
-				out.add(j);
+			if (isValidCapture(n, l, dN, dL, enemy))
+				out.add(new int[] {n, l, dN, dL});	
+		}
+		
+		if (p == PAWN) {
+			if (isDouble(n, l, n, l + 2 * sign))
+				out.add(new int[] {n, l, n, l + 2 * sign});	
+			
+			if (isEnPassant(n, l, n + 1, l + 1 * sign))
+				out.add(new int[] {n, l, n + 1, l + 1 * sign});
+			
+			if (isEnPassant(n, l, n - 1, l + 1 * sign))
+				out.add(new int[] {n, l, n - 1, l + 1 * sign});
+		}
+		
+		if (p == KING) {
+			if (isCastleKing(n, l, 6, l))
+				out.add(new int[] {n, l, 6, l});
+			
+			if (isCastleQueen(n, l, 2, l))
+				out.add(new int[] {n, l, 2, l});
 		}
 		
 		return out;
 	}
 
+	public List<Point> getAllEndPoints(int n, int l){
+		var in = getAllMoves(n, l);
+		
+		return in.stream()
+				.map(a -> new Point(a[2], a[3]))
+				.collect(Collectors.toList());
+	}
+	
 	public boolean move(int n, int l, int dN, int dL) {
 		var move = isValidMove(n, l, dN, dL);
 		
@@ -340,17 +374,19 @@ public class Board {
 			return (black & i) != 0;
 	}
 
-	// expanded bc this is so unreadable
-	// implies king and rook are on starting squares,
-	// if the board has the right to castle.
-	// note: check for correct rook
+	/*
+	 * expanded bc this is so unreadable
+	 * implies king and rook are on starting squares,
+	 * if the board has the right to castle.
+	 * note: check for correct rook
+	 */
 	private boolean isCastleKing(int n, int l, int dN, int dL) {
 		if (turn) {
-			if (!rightToCastleK_W || !(dN == 7 && dL == 0))
+			if (!rightToCastleK_W || !(dN == 6 && dL == 0))
 				return false;
 		}
 		else {
-			if (!rightToCastleK_B || !(dN == 7 && dL == 7))
+			if (!rightToCastleK_B || !(dN == 6 && dL == 7))
 				return false;
 		}
 			
@@ -362,11 +398,11 @@ public class Board {
 	
 	private boolean isCastleQueen(int n, int l, int dN, int dL) {
 		if (turn) {
-			if (!rightToCastleQ_W || !(dN == 0 && dL == 0))
+			if (!rightToCastleQ_W || !(dN == 2 && dL == 0))
 				return false;
 		}
 		else {
-			if (!rightToCastleQ_B || !(dN == 0 && dL == 7))
+			if (!rightToCastleQ_B || !(dN == 2 && dL == 7))
 				return false;
 		}
 			
@@ -395,39 +431,26 @@ public class Board {
 	}
 
 	public static boolean isValidIndex(int n, int l) {
-		return !(n < 0 && n >= 8 && l < 0 && l >= 8);
+		return !(n < 0 || n >= 8 || l < 0 || l >= 8);
 	}
 	
-	public int isValidSpace(int n, int l, int incN, int incL, Piece p, long enemy) {
-		if (!isValidIndex(n + incN, l + incL))
-			return -1;
+	public boolean isValidSpace(int n, int l, int dN, int dL, long enemy) {
+		if (!isValidIndex(dN, dL))
+			return false;
 		
-		int j = 1 << (n + l * 8);
+		Piece p = board[n + l * 8];
+		long j = 1L << (dN + dL * 8);
 		
-		if ((exists & j) == 0 || ((enemy & j) != 0 && p.canMoveAttack)) {
-			return (n +
-					(l >> 4) + 
-					((n + incN) >> 8) +
-					((l + incL) >> 12));
-		}
-		
-		return -1;
+		return (exists & j) == 0 || ((enemy & j) != 0 && p.canMoveAttack);
 	}
 	
-	public int isValidAttackSpace(int n, int l, int incN, int incL, long enemy) {
-		if (!isValidIndex(n + incN, l + incL))
-			return -1;
+	public boolean isValidCapture(int n, int l, int dN, int dL, long enemy) {
+		if (!isValidIndex(dN, dL))
+			return false;
 		
-		int j = 1 << (n + l * 8);
+		long j = 1L << (dN + dL * 8);
 		
-		if ((enemy & j) != 0) {
-			return (n +
-					(l >> 4) + 
-					((n + incN) >> 8) +
-					((l + incL) >> 12));
-		}
-		
-		return -1;
+		return (enemy & j) != 0;
 	}
 
 	//DEBUG

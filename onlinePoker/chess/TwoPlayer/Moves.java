@@ -1,4 +1,4 @@
-package chess;
+package TwoPlayer;
 
 public enum Moves {
 	NORMAL, 
