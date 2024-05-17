@@ -332,7 +332,7 @@ public class Board {
 		
 		inCheck = isInCheck(turn);
 		
-//		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, isInCheck(turn)));
+		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, inCheck));
 //		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
 
 		return true;
@@ -488,6 +488,27 @@ public class Board {
 		return (enemy & j) != 0;
 	}
 	
+	public long coverage(boolean side) {
+		long hero = side ? white : black;
+		long enemy = side ? black : white;
+		
+		long out = 0L;
+		
+		for (int n = 0; n < 8; n++) {
+			for (int l = 0; l < 8; l++) {
+				out |= coverage(n, l, hero, enemy);
+			}
+		}
+		
+		return out;
+	}
+	
+	private long coverage(int n, int l, long hero, long enemy) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Deprecated
 	public boolean isInCheck(boolean side) {
 		Point p = findKing(side);
 		int n = p.x, l = p.y;
