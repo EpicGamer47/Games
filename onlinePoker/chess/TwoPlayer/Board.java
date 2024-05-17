@@ -83,7 +83,7 @@ public class Board {
 	}
 	
 	public List<int[]> getAllMoves() {
-		var<int[]> out = new ArrayList<int[]>();
+		ArrayList<int[]> out = new ArrayList<int[]>();
 		
 		for (int n = 0; n < 8; n++) {
 			for (int l = 0; l < 8; l++) {
@@ -100,7 +100,7 @@ public class Board {
 		if ((exists & i) == 0)
 			return Collections.emptyList();
 		
-		var<int[]> out = new ArrayList<int[]>();
+		ArrayList<int[]> out = new ArrayList<int[]>();
 		
 		long enemy = turn ? black : white;
 		int sign = turn ? 1 : -1;
@@ -169,7 +169,6 @@ public class Board {
 				.filter(p -> {
 					long j = 1L << (p.x + p.y * 8);
 					
-					
 					return (enemy & j) != 0 || 
 							(board[n + l * 8] == PAWN && 
 							l == (turn ? 4 : 3) &&
@@ -191,26 +190,16 @@ public class Board {
 	public boolean move(int n, int l, int dN, int dL) {
 		var move = isValidMove(n, l, dN, dL);
 		
-		if (move == null) {
+		if (move == null || 
+				(inCheck && (move == CASTLE_KING || move == CASTLE_QUEEN))) {
 			System.out.println(String.format("FAIL %d %d %d %d", n, l, dN, dL));
 			return false;
 		}
 		
-		if (move == DOUBLE)
-			lastDouble = n;
-		else
-			lastDouble = -1;
+		long oldBlack = black, oldWhite = white;
+		Piece[] oldBoard = board.clone();
 		
-		if (board[l * 8 + n] == KING) {
-			if (turn) {
-				rightToCastleK_W = false;
-				rightToCastleQ_W = true;
-			}
-			else {
-				rightToCastleK_B = false;
-				rightToCastleQ_B = true;
-			}
-		}
+
 			
 		if (board[l * 8 + n] == ROOK) {
 			if (turn && l == 0) {
@@ -235,8 +224,7 @@ public class Board {
 		
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
-		@SuppressWarnings("unused")
-		long k1, k2, s1, s2;
+		long k1, s1, s2;
 		
 		switch (move) {
 		case DOUBLE:
@@ -323,10 +311,28 @@ public class Board {
 			}
 			break;
 		}
+		
+		if (move == DOUBLE)
+			lastDouble = n;
+		else
+			lastDouble = -1;
+		
+		if (board[l * 8 + n] == KING) {
+			if (turn) {
+				rightToCastleK_W = false;
+				rightToCastleQ_W = true;
+			}
+			else {
+				rightToCastleK_B = false;
+				rightToCastleQ_B = true;
+			}
+		}
 
 		turn = !turn;
 		
-		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, isInCheck(turn)));
+		inCheck = isInCheck(turn);
+		
+//		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, isInCheck(turn)));
 //		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
 
 		return true;
@@ -494,7 +500,7 @@ public class Board {
 			long j = 1L << (dN + dL * 8);
 			
 			if (isValidIndex(dN, dL) && (enemy & j) != 0)
-				for (int[] D : board[n + l * 8].single)
+				for (int[] D : board[dN + dL * 8].single)
 					if (Arrays.equals(d, D))
 						return true;
 		}
@@ -522,7 +528,7 @@ public class Board {
 			long j = 1L << (dN + dL * 8);
 			
 			if (isValidIndex(dN, dL) && (enemy & j) != 0)
-				for (int[] D : board[n + l * 8].attack)
+				for (int[] D : board[dN + dL * 8].attack)
 					if (Arrays.equals(d, D))
 						return true;
 		}
