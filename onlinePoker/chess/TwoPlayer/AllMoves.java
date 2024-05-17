@@ -11,7 +11,7 @@ public class AllMoves {
 	
 	static {
 		single = Arrays.stream(Piece.values())
-//					.filter(p -> p != Piece.KING) // useful for standard chess
+					.filter(p -> p != Piece.KING && p.canMoveAttack)
 					.map(p -> p.single)
 					.flatMap(a -> Arrays.stream(a))
 					.distinct()
@@ -22,7 +22,6 @@ public class AllMoves {
 				.distinct()
 				.toArray(int[][]::new);
 		attack = Arrays.stream(Piece.values())
-//				.filter(p -> !p.canMoveAttack) // no need here
 				.map(p -> p.attack)
 				.flatMap(a -> Arrays.stream(a))
 				.distinct()

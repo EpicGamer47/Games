@@ -16,7 +16,7 @@ public class ProcessingBoard extends Board {
 	
 	private PApplet parent;
 	private Point lastClick;
-	private List<Point> lastClickMoves;
+	private List<Point>[] lastClickMoves;
 	private boolean isPlayerWhite;
 	
 	public ProcessingBoard(PApplet parent) {
@@ -25,7 +25,7 @@ public class ProcessingBoard extends Board {
 		isPlayerWhite = true;
 		
 		lastClick = null;
-		lastClickMoves = Collections.emptyList();
+		lastClickMoves = null;
 	}
 	
 	public ProcessingBoard(PApplet parent, boolean playerColor) {
@@ -34,7 +34,7 @@ public class ProcessingBoard extends Board {
 		isPlayerWhite = playerColor;
 
 		lastClick = null;
-		lastClickMoves = Collections.emptyList();
+		lastClickMoves = null;
 	}
 	
 	public void draw() {
@@ -62,7 +62,10 @@ public class ProcessingBoard extends Board {
 	}
 
 	private void drawDots(boolean side) {
-		for (Point p : lastClickMoves) {
+		if (lastClickMoves == null)
+			return;
+		
+		for (Point p : lastClickMoves[0]) {
 			float x1, y1;
 			
 			if (side) {
@@ -76,13 +79,29 @@ public class ProcessingBoard extends Board {
 			
 			long i = 1L << (p.x + p.y * 8);
 			
-			if ((exists & i) != 0)
-				parent.fill(0x77FF0000);
-			else
-				parent.fill(0x77000000);
+			parent.fill(0x77000000);
 			
 			parent.ellipse(x1, y1, width * 0.33f, width * 0.33f);
-		}	
+		}
+		
+		for (Point p : lastClickMoves[1]) {
+			float x1, y1;
+			
+			if (side) {
+				x1 = 100 + width * (p.x + 0.5f);
+				y1 = 100 + width * (7 - p.y + 0.5f);
+			}
+			else {
+				x1 = (parent.width - 100 - width * 8) + width * (7 - p.x + 0.5f);
+				y1 = 100 + width * (p.y + 0.5f);
+			}
+			
+			long i = 1L << (p.x + p.y * 8);
+			
+			parent.fill(0x77FF0000);
+			
+			parent.ellipse(x1, y1, width * 0.33f, width * 0.33f);
+		}
 	}
 
 	private void drawSquare(int n, int l, int x, int y, boolean side) {
@@ -145,11 +164,12 @@ public class ProcessingBoard extends Board {
 			if (canMoveFrom(n, l)) {
 				lastClick = new Point(n, l);
 				lastClickMoves = getAllEndPoints(n, l);
+//				System.out.println(lastClickMoves[0] + ", " + lastClickMoves[1]);
 			}
 			else if (lastClick != null && !(lastClick.x == n && lastClick.y == l)) {
 				if (move(lastClick.x, lastClick.y, n, l)) {
 					lastClick = null;
-					lastClickMoves = Collections.emptyList();
+					lastClickMoves = null;
 				}
 			}
 		}

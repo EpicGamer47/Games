@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Board {
 	private static Piece row1[] = {ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
@@ -82,7 +83,7 @@ public class Board {
 	}
 	
 	public List<int[]> getAllMoves() {
-		var out = new ArrayList<int[]>();
+		var<int[]> out = new ArrayList<int[]>();
 		
 		for (int n = 0; n < 8; n++) {
 			for (int l = 0; l < 8; l++) {
@@ -99,7 +100,7 @@ public class Board {
 		if ((exists & i) == 0)
 			return Collections.emptyList();
 		
-		var out = new ArrayList<int[]>();
+		var<int[]> out = new ArrayList<int[]>();
 		
 		long enemy = turn ? black : white;
 		int sign = turn ? 1 : -1;
@@ -108,28 +109,28 @@ public class Board {
 		for (int[] d : p.single) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidSpace(n, l, dN, dL, enemy))
+			if (isValidSpace(p, dN, dL, enemy))
 				out.add(new int[] {n, l, dN, dL});
 		}
 		
 		for (int[] d : p.repeat) {
 			int iN = n + d[0], iL = l + d[1] * sign;
 			
-			while (isValidSpace(n, l, iN, iL, enemy) && 
-					!isValidCapture(n, l, iN, iL, enemy)) {
+			while (isValidSpace(p, iN, iL, enemy) && 
+					!isValidCapture(iN, iL, enemy)) {
 				out.add(new int[] {n, l, iN, iL});
 				iN += d[0];
 				iL += d[1] * sign;
 			}
 			
-			if (isValidCapture(n, l, iN, iL, enemy))
+			if (isValidCapture(iN, iL, enemy))
 				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
-			int dN = n + d[0], dL = d[1] * sign;
+			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(n, l, dN, dL, enemy))
+			if (isValidCapture(dN, dL, enemy))
 				out.add(new int[] {n, l, dN, dL});	
 		}
 		
@@ -155,12 +156,36 @@ public class Board {
 		return out;
 	}
 
-	public List<Point> getAllEndPoints(int n, int l){
+	@SuppressWarnings("unchecked")
+	public List<Point>[] getAllEndPoints(int n, int l){
 		var in = getAllMoves(n, l);
 		
-		return in.stream()
+		long enemy = turn ? black : white;
+		
+		var endPoints = in;
+		
+		var captures = endPoints.stream()
 				.map(a -> new Point(a[2], a[3]))
+				.filter(p -> {
+					long j = 1L << (p.x + p.y * 8);
+					
+					
+					return (enemy & j) != 0 || 
+							(board[n + l * 8] == PAWN && 
+							l == (turn ? 4 : 3) &&
+							isEnPassant(n, l, p.x, p.y));
+				})
 				.collect(Collectors.toList());
+		
+		var normal = endPoints.stream()
+				.map(a -> new Point(a[2], a[3]))
+				.filter(p -> !captures.contains(p))
+				.collect(Collectors.toList());
+		
+		return new List[] {
+				normal, 
+				captures
+					};			
 	}
 	
 	public boolean move(int n, int l, int dN, int dL) {
@@ -210,6 +235,7 @@ public class Board {
 		
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
+		@SuppressWarnings("unused")
 		long k1, k2, s1, s2;
 		
 		switch (move) {
@@ -297,10 +323,12 @@ public class Board {
 			}
 			break;
 		}
+
+		turn = !turn;
 		
 		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, isInCheck(turn)));
-		
-		turn = !turn;
+//		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
+
 		return true;
 	}
 	
@@ -436,17 +464,16 @@ public class Board {
 		return !(n < 0 || n >= 8 || l < 0 || l >= 8);
 	}
 	
-	public boolean isValidSpace(int n, int l, int dN, int dL, long enemy) {
+	public boolean isValidSpace(Piece p, int dN, int dL, long enemy) {
 		if (!isValidIndex(dN, dL))
 			return false;
 		
-		Piece p = board[n + l * 8];
 		long j = 1L << (dN + dL * 8);
 		
 		return (exists & j) == 0 || ((enemy & j) != 0 && p.canMoveAttack);
 	}
 	
-	public boolean isValidCapture(int n, int l, int dN, int dL, long enemy) {
+	public boolean isValidCapture(int dN, int dL, long enemy) {
 		if (!isValidIndex(dN, dL))
 			return false;
 		
@@ -459,12 +486,14 @@ public class Board {
 		Point p = findKing(side);
 		int n = p.x, l = p.y;
 		long enemy = side ? black : white;
-		int sign = side ? -1 : 1; // get the enemy's sign
+		int sign = side ? 1 : -1; // backtrack
 		
 		for (int[] d : AllMoves.single) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(n, l, dN, dL, enemy))
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL) && (enemy & j) != 0)
 				for (int[] D : board[n + l * 8].single)
 					if (Arrays.equals(d, D))
 						return true;
@@ -473,14 +502,16 @@ public class Board {
 		for (int[] d : AllMoves.repeat) {
 			int iN = n + d[0], iL = l + d[1] * sign;
 			
-			while (isValidSpace(n, l, iN, iL, enemy) && 
-					!isValidCapture(n, l, iN, iL, enemy)) {
+			long k = 1L << (iN + iL * 8);
+			
+			while (isValidIndex(iN, iL) && (exists & k) == 0) {
 				iN += d[0];
 				iL += d[1] * sign;
+				k = 1L << (iN + iL * 8);
 			}
 			
-			if (isValidCapture(n, l, iN, iL, enemy))
-				for (int[] D : board[n + l * 8].repeat)
+			if (isValidIndex(iN, iL) && (enemy & k) != 0)
+				for (int[] D : board[iN + iL * 8].repeat)
 					if (Arrays.equals(d, D))
 						return true;
 		}
@@ -488,7 +519,9 @@ public class Board {
 		for (int[] d : AllMoves.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(n, l, dN, dL, enemy))
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL) && (enemy & j) != 0)
 				for (int[] D : board[n + l * 8].attack)
 					if (Arrays.equals(d, D))
 						return true;
