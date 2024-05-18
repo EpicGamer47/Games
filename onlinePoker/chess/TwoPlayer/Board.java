@@ -34,7 +34,6 @@ public class Board {
 	protected boolean rightToCastleK_B;
 	protected boolean rightToCastleQ_B;
 	protected int lastDouble;
-	protected boolean inCheck;
 	
 	public Board() {
 		board = new Piece[8 * 8];
@@ -79,7 +78,6 @@ public class Board {
 		rightToCastleK_B = true;
 		rightToCastleQ_B = true;
 		lastDouble = -1;
-		inCheck = false;
 	}
 	
 	public List<int[]> getAllMoves() {
@@ -109,7 +107,8 @@ public class Board {
 		for (int[] d : p.single) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidSpace(p, dN, dL, enemy))
+			if (isValidSpace(p, dN, dL, enemy) &&
+					checkMove(n, l, dN, dL))
 				out.add(new int[] {n, l, dN, dL});
 		}
 		
@@ -117,25 +116,26 @@ public class Board {
 			int iN = n + d[0], iL = l + d[1] * sign;
 			
 			while (isValidSpace(p, iN, iL, enemy) && 
-					!isValidCapture(iN, iL, enemy)) {
+					!isValidCapture(iN, iL, enemy) && 
+					checkMove(n, l, iN, iL)) {
 				out.add(new int[] {n, l, iN, iL});
 				iN += d[0];
 				iL += d[1] * sign;
 			}
 			
-			if (isValidCapture(iN, iL, enemy))
+			if (isValidCapture(iN, iL, enemy) && checkMove(n, l, iN, iL))
 				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(dN, dL, enemy))
+			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL))
 				out.add(new int[] {n, l, dN, dL});	
 		}
 		
 		if (p == PAWN) {
-			if (isDouble(n, l, n, l + 2 * sign))
+			if (checkMove(n, l, n, l + 2 * sign)) // double
 				out.add(new int[] {n, l, n, l + 2 * sign});	
 			
 			if (isEnPassant(n, l, n + 1, l + 1 * sign))
@@ -146,10 +146,10 @@ public class Board {
 		}
 		
 		if (p == KING) {
-			if (isCastleKing(n, l, 6, l))
+			if (checkMove(n, l, 6, l)) // castle king
 				out.add(new int[] {n, l, 6, l});
 			
-			if (isCastleQueen(n, l, 2, l))
+			if (checkMove(n, l, 2, l)) // castle queen
 				out.add(new int[] {n, l, 2, l});
 		}
 		
@@ -190,17 +190,150 @@ public class Board {
 	public boolean move(int n, int l, int dN, int dL) {
 		var move = isValidMove(n, l, dN, dL);
 		
-		if (move == null || 
-				(inCheck && (move == CASTLE_KING || move == CASTLE_QUEEN))) {
-			System.out.println(String.format("FAIL %d %d %d %d", n, l, dN, dL));
+		if (move == null) {
+			System.out.println(String.format("ILLEGALFAIL %d %d %d %d", n, l, dN, dL));
 			return false;
 		}
 		
-		long oldBlack = black, oldWhite = white;
-		Piece[] oldBoard = board.clone();
+		long oldBlack = black, oldWhite = white, oldExists = exists;
 		
-
+		long sk1 = 0b1110L << (l * 8 + 4); // include king & 2 spaces
+		long sq1 = 0b00111L << (l * 8 + 0);
+		
+		long i = 1L << (n + l * 8);
+		long j = 1L << (dN + dL * 8);
+		long king = findKing(turn);
+		
+//		long hero = turn ? white : black;
+		long enemy = turn ? black : white;
+		
+		long c = coverage(!turn, enemy);
+		
+		switch (move) {
+		case DOUBLE:
+		case NORMAL:
+			if (board[l * 8 + n] == KING && ((c & j) != 0)) {
+				System.out.println(String.format("WALKCHECKFAIL %d %d %d %d", n, l, dN, dL));
+				return false;
+			}
 			
+			var temp = board[dL * 8 + dN];
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}
+			
+			c = coverage(!turn);
+			
+			if (board[dL * 8 + dN] != KING && (c & king) != 0) {
+				board[l * 8 + n] = board[dL * 8 + dN];
+				board[dL * 8 + dN] = temp;
+				
+				exists = oldExists;
+				black = oldBlack;
+				white = oldWhite;
+				
+				System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
+				return false;
+			}
+			
+			break;
+		case EN_PASSANT: // not gonna bother with discovered check detection
+			
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			board[l * 8 + dN] = null;
+			
+			long k1 = 1L << (l * 8 + dN); // en-passanted pawn
+			
+			exists &= ~i;
+			exists &= ~k1;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~k1;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~k1;
+				black &= ~i;
+				black |= j;
+			}
+			break;
+		case CASTLE_KING:
+			if ((c & sk1) != 0) {
+				System.out.println(String.format("CHECKFAILK %d %d %d %d", n, l, dN, dL));
+				return false;
+			}
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 6] = KING;
+			board[l * 8 + 5] = ROOK;
+			
+			sk1 = 0b0110L << (l * 8 + 4);
+			long sk2 = 0b1001L << (l * 8 + 4);
+			
+			exists &= ~sk2;
+			exists |= sk1;
+			
+			if (turn) {
+				white &= ~sk2;
+				white |= sk1;
+			}
+			else {
+				black &= ~sk2;
+				black |= sk1;
+			}
+			break;
+		case CASTLE_QUEEN:
+			if ((c & sq1) != 0) {
+				System.out.println(String.format("CHECKFAILQ %d %d %d %d", n, l, dN, dL));
+				return false;
+			}
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 2] = KING;
+			board[l * 8 + 3] = ROOK;
+			
+			sq1 = 0b01110L << (l * 8 + 0);
+			long sq2 = 0b10001L << (l * 8 + 0);
+			
+			exists &= ~sq2;
+			exists |= sq1;
+			
+			if (turn) {
+				white &= ~sq2;
+				white |= sq1;
+			}
+			else {
+				black &= ~sq2;
+				black |= sq1;
+			}
+			break;
+		}
+		
+		if (move == DOUBLE)
+			lastDouble = n;
+		else
+			lastDouble = -1;
+
+		turn = !turn;
+		
 		if (board[l * 8 + n] == ROOK) {
 			if (turn && l == 0) {
 				if (n == 0)
@@ -214,128 +347,73 @@ public class Board {
 				else if (n == 7)
 					rightToCastleK_B = false;
 			}
-		
-			System.out.println(String.format("%b %b %b %b",
-					rightToCastleK_W,
-					rightToCastleQ_W,
-					rightToCastleK_B,
-					rightToCastleQ_B));
+		}
+		if (board[l * 8 + n] == KING) {
+			if (turn) {
+				rightToCastleQ_W = false;
+				rightToCastleK_W = false;
+			}
+			else {
+				rightToCastleQ_B = false;
+				rightToCastleK_B = false;
+			}
 		}
 		
-		long i = 1L << (n + l * 8);
+		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
+
+		return true;
+	}
+
+	public boolean checkMove(int n, int l, int dN, int dL) {
+		var move = isValidMove(n, l, dN, dL);
+		
+		if (move == null) {
+			return false;
+		}
+		
+		long enemy = turn ? black : white;
+		
+		long sk1 = 0b1110L << (l * 8 + 4); // include king & 2 spaces
+		long sq1 = 0b00111L << (l * 8 + 0);
+//		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
-		long k1, s1, s2;
+		long king = findKing(turn);
+//		long hero = turn ? white : black;
+		long c = coverage(!turn, enemy);
 		
 		switch (move) {
 		case DOUBLE:
 		case NORMAL:
+			if (board[l * 8 + n] == KING && ((c & j) != 0))
+				return false;
+			
+			var temp = board[dL * 8 + dN];
 			board[dL * 8 + dN] = board[l * 8 + n];
 			board[l * 8 + n] = null;
 			
-			exists = exists & (~i);
-			exists = exists | j;
+			enemy &= ~j;
+//			hero &= ~i;
+//			hero |= j;
 			
-			if (turn) {
-				black = black & (~j);
-				white = white & (~i);
-				white = white | j;
-			}
-			else {
-				white = white & (~j);
-				black = black & (~i);
-				black = black | j;
-			}
-			break;
-		case EN_PASSANT:
-			board[dL * 8 + dN] = board[l * 8 + n];
-			board[l * 8 + n] = null;
-			board[l * 8 + dN] = null;
+			c = coverage(!turn, enemy);
 			
-			k1 = 1L << (l * 8 + dN); // en-passanted pawn
+			board[l * 8 + n] = board[dL * 8 + dN];
+			board[dL * 8 + dN] = temp;
 			
-			exists = exists & (~i);
-			exists = exists & (~k1);
-			exists = exists | j;
+			if (board[l * 8 + n] != KING && (c & king) != 0) {
+				return false;
+			}
 			
-			if (turn) {
-				black = black & (~k1);
-				white = white & (~i);
-				white = white | j;
-			}
-			else {
-				white = white & (~k1);
-				black = black & (~i);
-				black = black | j;
-			}
-			break;
+			return true;
+		case EN_PASSANT: // not gonna bother with discovered check detection
+			return true;
 		case CASTLE_KING:
-			board[l * 8 + n] = null;
-			board[dL * 8 + dN] = null;
-			board[l * 8 + 6] = KING;
-			board[l * 8 + 5] = ROOK;
-			
-			s1 = 0b0110L << (l * 8 + 4);
-			s2 = 0b1001L << (l * 8 + 4);
-			
-			exists = exists & (~s2);
-			exists = exists | s1;
-			
-			if (turn) {
-				white = white & (~s2);
-				white = white | s1;
-			}
-			else {
-				black = black & (~s2);
-				black = black | s1;
-			}
-			break;
+			return (c & sk1) == 0;
 		case CASTLE_QUEEN:
-			board[l * 8 + n] = null;
-			board[dL * 8 + dN] = null;
-			board[l * 8 + 2] = KING;
-			board[l * 8 + 3] = ROOK;
-			
-			s1 = 0b01100L << (l * 8 + 0);
-			s2 = 0b10001L << (l * 8 + 0);
-			
-			exists = exists & (~s2);
-			exists = exists | s1;
-			
-			if (turn) {
-				white = white & (~s2);
-				white = white | s1;
-			}
-			else {
-				black = black & (~s2);
-				black = black | s1;
-			}
-			break;
+			return (c & sq1) == 0;
 		}
 		
-		if (move == DOUBLE)
-			lastDouble = n;
-		else
-			lastDouble = -1;
-		
-		if (board[l * 8 + n] == KING) {
-			if (turn) {
-				rightToCastleK_W = false;
-				rightToCastleQ_W = true;
-			}
-			else {
-				rightToCastleK_B = false;
-				rightToCastleQ_B = true;
-			}
-		}
-
-		turn = !turn;
-		
-		inCheck = isInCheck(turn);
-		
-		System.out.println(String.format("%s %d %d %d %d %b", move.toString(), n, l, dN, dL, inCheck));
-//		System.out.println(String.format("%s %d %d %d %d", move.toString(), n, l, dN, dL));
-
-		return true;
+		throw new IllegalStateException("how did this even get here");
 	}
 	
 	public Moves isValidMove(int n, int l, int dN, int dL) {
@@ -489,75 +567,94 @@ public class Board {
 	}
 	
 	public long coverage(boolean side) {
-		long hero = side ? white : black;
-		long enemy = side ? black : white;
+		long out = 0L;
 		
+		long hero = side ? white : black;
+		
+		for (int n = 0; n < 8; n++) {
+			for (int l = 0; l < 8; l++) {
+				out |= coverage(n, l, side, hero);
+			}
+		}
+		
+		return (out & ~findKing(side));
+	}
+	
+	public long coverage(int n, int l, boolean side) {
+		long hero = side ? white : black;
+		
+		return coverage(n, l, side, hero);
+	}
+	
+	public long coverage(boolean side, long hero) {
 		long out = 0L;
 		
 		for (int n = 0; n < 8; n++) {
 			for (int l = 0; l < 8; l++) {
-				out |= coverage(n, l, hero, enemy);
+				out |= coverage(n, l, side, hero);
 			}
 		}
 		
-		return out;
+		return (out & ~findKing(side)); // no need to protect king
 	}
 	
-	private long coverage(int n, int l, long hero, long enemy) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Deprecated
-	public boolean isInCheck(boolean side) {
-		Point p = findKing(side);
-		int n = p.x, l = p.y;
-		long enemy = side ? black : white;
-		int sign = side ? 1 : -1; // backtrack
+	public long coverage(int n, int l, boolean side, long hero) {
+		long i = 1L << (n + l * 8);
 		
-		for (int[] d : AllMoves.single) {
-			int dN = n + d[0], dL = l + d[1] * sign;
-			
-			long j = 1L << (dN + dL * 8);
-			
-			if (isValidIndex(dN, dL) && (enemy & j) != 0)
-				for (int[] D : board[dN + dL * 8].single)
-					if (Arrays.equals(d, D))
-						return true;
+		if ((hero & i) == 0)
+			return 0;
+		
+		long out = 0L;
+		Piece p = board[l * 8 + n];
+		int sign = side ? 1 : -1;
+		
+		if (p.canMoveAttack) {
+			for (int[] d : p.single) {
+				int dN = n + d[0], dL = l + d[1] * sign;
+				
+				long j = 1L << (dN + dL * 8);
+				
+				if (isValidIndex(dN, dL)) // empty spaces count
+					out |= j;
+			}
 		}
+			
 		
-		for (int[] d : AllMoves.repeat) {
+		for (int[] d : p.repeat) {
 			int iN = n + d[0], iL = l + d[1] * sign;
 			
 			long k = 1L << (iN + iL * 8);
 			
 			while (isValidIndex(iN, iL) && (exists & k) == 0) {
+				out |= k;
+				
 				iN += d[0];
 				iL += d[1] * sign;
 				k = 1L << (iN + iL * 8);
 			}
 			
-			if (isValidIndex(iN, iL) && (enemy & k) != 0)
-				for (int[] D : board[iN + iL * 8].repeat)
-					if (Arrays.equals(d, D))
-						return true;
+			if (isValidIndex(iN, iL))
+				out |= k;
 		}
 		
-		for (int[] d : AllMoves.attack) {
+		for (int[] d : p.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
 			long j = 1L << (dN + dL * 8);
 			
-			if (isValidIndex(dN, dL) && (enemy & j) != 0)
-				for (int[] D : board[dN + dL * 8].attack)
-					if (Arrays.equals(d, D))
-						return true;
+			if (isValidIndex(dN, dL))
+				out |= j;
 		}
 		
-		return false;
+		return out;
 	}
 
-	public Point findKing(boolean side) {
+	public long findKing(boolean side) {
+		if (side && (rightToCastleK_W || rightToCastleQ_W))
+			return 1L << (4 + 0 * 8);
+		if (!side && (rightToCastleK_B || rightToCastleQ_B))
+			return 1L << (4 + 7 * 8);
+			
 		int n, l;
 		
 		long hero = side ? white : black;
@@ -566,8 +663,8 @@ public class Board {
 			for (l = 0; l < 8; l++) {
 				long i = 1L << (n + l * 8);
 				
-				if ((hero & i) != 0 && board[n + l * 8] == KING)
-					return new Point(n, l);
+				if (board[n + l * 8] == KING && (hero & i) != 0)
+					return 1L << (n + l * 8);
 			}
 		}
 		

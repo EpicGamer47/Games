@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import processing.core.PApplet;
+import processing.core.PConstants;
 import processing.core.PShape;
 
 public class ProcessingBoard extends Board {
@@ -18,6 +19,7 @@ public class ProcessingBoard extends Board {
 	private Point lastClick;
 	private List<Point>[] lastClickMoves;
 	private boolean isPlayerWhite;
+	private boolean gameOver;
 	
 	public ProcessingBoard(PApplet parent) {
 		super(true);
@@ -26,6 +28,8 @@ public class ProcessingBoard extends Board {
 		
 		lastClick = null;
 		lastClickMoves = null;
+		
+		setupProcessing();
 	}
 	
 	public ProcessingBoard(PApplet parent, boolean playerColor) {
@@ -35,14 +39,19 @@ public class ProcessingBoard extends Board {
 
 		lastClick = null;
 		lastClickMoves = null;
+		
+		setupProcessing();
 	}
 	
-	public void draw() {
+	private void setupProcessing() {
+		parent.noStroke();
 		parent.rectMode(PApplet.CORNER);
 		parent.shapeMode(PApplet.CORNER);
 		parent.ellipseMode(PApplet.CENTER);
-		parent.noStroke();
-		
+		parent.textAlign(PApplet.CENTER, PApplet.CENTER);
+	}
+
+	public void draw() {
 		for (int l = 0; l < 8; l++) {
 			for (int n = 0; n < 8; n++) {
 				drawSquare(n, l, 100, 100, true);
@@ -59,6 +68,28 @@ public class ProcessingBoard extends Board {
 			parent.rect(100, 100, width * 8, width * 8);
 		
 		drawDots(turn);
+		
+		if (gameOver)
+			gameOver();
+	}
+
+	private void gameOver() {
+		parent.fill(0x77000000);
+		parent.rect(0, 0, parent.width, parent.height);
+		parent.fill(0xFFFFFFFF);
+		parent.textSize(100);
+		
+		long king = this.findKing(turn);
+		long hero = turn ? white : black;
+		
+		String msg = "50 move rule - draw";
+		
+		if ((hero & king) == 0)
+			msg = "Stalemate";
+		else
+			msg = "Checkmate: " + (turn ? "Black" : "White") + " wins!";
+		
+		parent.text(msg, parent.width / 2, parent.height / 2);
 	}
 
 	private void drawDots(boolean side) {
@@ -170,6 +201,10 @@ public class ProcessingBoard extends Board {
 				if (move(lastClick.x, lastClick.y, n, l)) {
 					lastClick = null;
 					lastClickMoves = null;
+					
+					if (getAllMoves().size() == 0) {
+						gameOver = true;
+					}
 				}
 			}
 		}
