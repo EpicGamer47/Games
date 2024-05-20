@@ -43,6 +43,13 @@ public class ProcessingBoard1 extends Board {
 	}
 
 	public void draw() {
+//		if (isPromoting(lastClick.x, lastClick.y)) {
+			if (turn)
+				drawPromotion(0);
+			else
+				drawPromotion(800);
+//		}
+		
 		if (turn != playerSide) {
 			ai.makeAMove();
 		}
@@ -95,7 +102,7 @@ public class ProcessingBoard1 extends Board {
 		parent.text(msg, parent.width / 2, parent.height / 2);
 	}
 
-	private void drawDots(boolean side) {
+	private void drawDots(boolean side) {	
 		if (lastClickMoves == null)
 			return;
 		
@@ -110,8 +117,6 @@ public class ProcessingBoard1 extends Board {
 				x1 = (parent.width - 100 - width * 8) + width * (7 - p.x + 0.5f);
 				y1 = 100 + width * (p.y + 0.5f);
 			}
-			
-//			long i = 1L << (p.x + p.y * 8);
 			
 			parent.fill(0x77000000);
 			
@@ -130,12 +135,15 @@ public class ProcessingBoard1 extends Board {
 				y1 = 100 + width * (p.y + 0.5f);
 			}
 			
-//			long i = 1L << (p.x + p.y * 8);
-			
 			parent.fill(0x77FF0000);
 			
 			parent.ellipse(x1, y1, width * 0.33f, width * 0.33f);
 		}
+	}
+
+	private void drawPromotion(int x) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	private void drawSquare(int n, int l, int x, int y, boolean side) {

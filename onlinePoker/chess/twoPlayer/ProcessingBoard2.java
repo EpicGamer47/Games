@@ -1,12 +1,12 @@
 package twoPlayer;
 
-import static common.Piece.BLACK;
-import static common.Piece.WHITE;
+import static common.Piece.*;
 
 import java.awt.Point;
 import java.util.List;
 
 import common.Board;
+import common.Piece;
 import processing.core.PApplet;
 import processing.core.PShape;
 
@@ -38,6 +38,13 @@ public class ProcessingBoard2 extends Board {
 	}
 
 	public void draw() {
+		if (lastClick != null &&  isPromoting(lastClick.x, lastClick.y)) {
+			if (turn)
+				drawPromotion(100, 100, WHITE);
+			else
+				drawPromotion(parent.width - 100 - width * 8, 100, BLACK);
+		}
+		
 		drawBackground();
 		
 		for (int l = 0; l < 8; l++) {
@@ -58,6 +65,22 @@ public class ProcessingBoard2 extends Board {
 		
 		if (gameOver)
 			gameOver();
+	}
+
+	private void drawPromotion(int x, int y, int color) {
+		Piece[] ps = {QUEEN, ROOK, BISHOP, KNIGHT};
+		
+		for (var p : ps) {
+			int tile = (y) % 2 == 0 ? 0xFFeeeed2 : 0xFF769656;
+			
+			parent.fill(color);
+			parent.rect(x, y, width, width);
+			
+			var img = parent.loadShape(p.getPieceFile(color));
+			parent.shape(img, x, y, width, width);
+			
+			y += width;
+		}
 	}
 
 	private void drawBackground() {
@@ -177,7 +200,6 @@ public class ProcessingBoard2 extends Board {
 			if ((white & i) != 0)
 				img = parent.loadShape(board[l * 8 + n].getPieceFile(WHITE));
 			else
-
 				img = parent.loadShape(board[l * 8 + n].getPieceFile(BLACK));
 			
 			parent.shape(img, x1, y1, width, width);

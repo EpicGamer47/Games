@@ -492,7 +492,7 @@ public class Board {
 	 * if the board has the right to castle.
 	 * note: check for correct rook
 	 */
-	private boolean isCastleKing(int n, int l, int dN, int dL) {
+	public boolean isCastleKing(int n, int l, int dN, int dL) {
 		if (turn) {
 			if (!rightToCastleK_W || !(dN == 6 && dL == 0))
 				return false;
@@ -508,7 +508,7 @@ public class Board {
 		return (exists & s) == 0;
 	}
 	
-	private boolean isCastleQueen(int n, int l, int dN, int dL) {
+	public boolean isCastleQueen(int n, int l, int dN, int dL) {
 		if (turn) {
 			if (!rightToCastleQ_W || !(dN == 2 && dL == 0))
 				return false;
@@ -524,7 +524,7 @@ public class Board {
 		return (exists & s) == 0;
 	}
 
-	private boolean isEnPassant(int n, int l, int dN, int dL) {
+	public boolean isEnPassant(int n, int l, int dN, int dL) {
 		int deltaL = dL - l;
 		
 		long i = 1L << (l * 8 + n);
@@ -537,7 +537,7 @@ public class Board {
 				(enemy & k) != 0 && board[l * 8 + dN] == PAWN;
 	}
 
-	private boolean isDouble(int n, int l, int dN, int dL) {
+	public boolean isDouble(int n, int l, int dN, int dL) {
 		long j = 1L << (dL * 8 + dN);
 		
 		return n == dN && 
