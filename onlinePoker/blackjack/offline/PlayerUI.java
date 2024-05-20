@@ -1,4 +1,4 @@
-package singlePlayer;
+package offline;
 
 import java.text.NumberFormat;
 import java.util.Scanner;

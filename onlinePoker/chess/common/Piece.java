@@ -1,6 +1,4 @@
-package TwoPlayer;
-
-import processing.core.PApplet;
+package common;
 
 public enum Piece {
 	PAWN(new int[][] {}, new int[][] {{0, 1}}, new int[][] {{-1, 1}, {1, 1}}, false),

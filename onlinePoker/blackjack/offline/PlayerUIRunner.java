@@ -1,4 +1,4 @@
-package singlePlayer;
+package offline;
 
 public class PlayerUIRunner
 {

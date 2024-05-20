@@ -1,13 +1,14 @@
 module onlinePoker {
-	exports singlePlayer;
+	exports offline;
 	exports pokerEngine;
-	exports TwoPlayer;
+	exports common;
+	exports twoPlayer;
+	exports singlePlayer;
 	exports test;
 	exports onlineEngine;
 	exports bjEngine;
 	exports multiDealer;
 
-	opens TwoPlayer to core;
 	requires core;
 	requires java.desktop;
 }

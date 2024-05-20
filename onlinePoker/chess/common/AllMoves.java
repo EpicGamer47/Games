@@ -1,8 +1,6 @@
-package TwoPlayer;
+package common;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.stream.Collectors;
 
 public class AllMoves {
 	public static int[][] single;

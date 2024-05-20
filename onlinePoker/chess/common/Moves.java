@@ -1,4 +1,4 @@
-package TwoPlayer;
+package common;
 
 public enum Moves {
 	NORMAL, 

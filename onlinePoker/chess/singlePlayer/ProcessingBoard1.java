@@ -1,42 +1,33 @@
-package TwoPlayer;
+package singlePlayer;
 
-import static TwoPlayer.Piece.BLACK;
-import static TwoPlayer.Piece.WHITE;
+import static common.Piece.BLACK;
+import static common.Piece.WHITE;
 
 import java.awt.Point;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
+import common.AI;
+import common.Board;
 import processing.core.PApplet;
-import processing.core.PConstants;
 import processing.core.PShape;
 
-public class ProcessingBoard extends Board {
-	static final int width = 75;
+@SuppressWarnings("exports")
+public class ProcessingBoard1 extends Board {
+	public static final int width = 75;
 	
 	private PApplet parent;
 	private Point lastClick;
 	private List<Point>[] lastClickMoves;
-	private boolean isPlayerWhite;
 	private boolean gameOver;
-	
-	public ProcessingBoard(PApplet parent) {
-		super(true);
-		this.parent = parent;
-		isPlayerWhite = true;
-		
-		lastClick = null;
-		lastClickMoves = null;
-		
-		setupProcessing();
-	}
-	
-	public ProcessingBoard(PApplet parent, boolean playerColor) {
-		super(true);
-		this.parent = parent;
-		isPlayerWhite = playerColor;
+	public final boolean playerSide;
+	public AI ai;
 
+	public ProcessingBoard1(PApplet parent, boolean playerSide) {
+		super();
+		this.parent = parent;
+		this.playerSide = playerSide;
+		
+		ai = new RandomAI(this);
 		lastClick = null;
 		lastClickMoves = null;
 		
@@ -52,25 +43,37 @@ public class ProcessingBoard extends Board {
 	}
 
 	public void draw() {
-		for (int l = 0; l < 8; l++) {
-			for (int n = 0; n < 8; n++) {
-				drawSquare(n, l, 100, 100, true);
-				drawSquare(n, l, parent.width - 100 - width * 8, 100, false);
-				
-			}
+		if (turn != playerSide) {
+			ai.makeAMove();
 		}
 		
-		parent.fill(0x77000000);
+		drawBackground();
 		
-		if (turn)
-			parent.rect(parent.width - 100 - width * 8, 100, width * 8, width * 8);
-		else
-			parent.rect(100, 100, width * 8, width * 8);
+		for (int l = 0; l < 8; l++) {
+			for (int n = 0; n < 8; n++) {
+				drawSquare(n, l, 100, 100, playerSide);
+			}
+		}
 		
 		drawDots(turn);
 		
 		if (gameOver)
 			gameOver();
+	}
+	
+	private void drawBackground() {
+		if (playerSide)
+			parent.background(0xFFDDDDDD);
+		else
+			parent.background(0xFF222222);
+		
+		if (playerSide)
+			parent.fill(0xFFCCCCCC);
+		else
+			parent.fill(0xFF333333);
+		
+		int w = ProcessingBoard1.width;
+		parent.rect(100 - w, 100 - w, w * 10, w * 10);
 	}
 
 	private void gameOver() {
@@ -108,7 +111,7 @@ public class ProcessingBoard extends Board {
 				y1 = 100 + width * (p.y + 0.5f);
 			}
 			
-			long i = 1L << (p.x + p.y * 8);
+//			long i = 1L << (p.x + p.y * 8);
 			
 			parent.fill(0x77000000);
 			
@@ -127,7 +130,7 @@ public class ProcessingBoard extends Board {
 				y1 = 100 + width * (p.y + 0.5f);
 			}
 			
-			long i = 1L << (p.x + p.y * 8);
+//			long i = 1L << (p.x + p.y * 8);
 			
 			parent.fill(0x77FF0000);
 			
@@ -150,7 +153,7 @@ public class ProcessingBoard extends Board {
 		int x1 = x + width * (dN);
 		int y1 = y + width * (dL);
 		
-		int color = (l + n) % 2 == 0 ? 0xFFeeeed2 : 0xFF769656;
+		int color = (dL + dN) % 2 == 0 ? 0xFFeeeed2 : 0xFF769656;
 		
 		parent.fill(color);
 		parent.rect(x1, y1, width, width);
@@ -158,7 +161,14 @@ public class ProcessingBoard extends Board {
 		if (side == turn &&
 				lastClick != null && 
 				n == lastClick.x && l == lastClick.y) {
-			parent.fill(0xFF03ac14);
+			parent.fill(0xbbe5f53d);
+			parent.rect(x1, y1, width, width);
+		}
+		
+		if (lastMove != null && 
+				((lastMove[0] == n && lastMove[1] == l) || 
+						(lastMove[2] == n && lastMove[3] == l))) {
+			parent.fill(0x88ecf76e);
 			parent.rect(x1, y1, width, width);
 		}
 		
@@ -178,18 +188,13 @@ public class ProcessingBoard extends Board {
 	}
 
 	public void click(int mouseX, int mouseY) {
-		int n, l;
+		int n = (mouseX - 100) / width;
+		int l = (mouseY - 100) / width;
 
-		if (turn) {
-			n = (mouseX - 100) / width;
-			l = (mouseY - 100) / width;
+		if (turn)
 			l = 7 - l;
-		}
-		else {
-			n = (mouseX - (parent.width - 100 - width * 8)) / width;
-			l = (mouseY - 100) / width;
+		else
 			n = 7 - n;
-		}
 
 		if (Board.isValidIndex(n, l)) {
 			if (canMoveFrom(n, l)) {
@@ -202,7 +207,7 @@ public class ProcessingBoard extends Board {
 					lastClick = null;
 					lastClickMoves = null;
 					
-					if (getAllMoves().size() == 0) {
+					if (getAllMoves(turn).size() == 0) {
 						gameOver = true;
 					}
 				}

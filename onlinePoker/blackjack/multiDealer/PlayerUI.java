@@ -142,7 +142,7 @@ public class PlayerUI
 	}
 	
     private void getDealersHandFromServer() {
-    	client.write();
+    	//client.write();
     	
 		System.out.println("Waiting for dealer hand...");
 		Hand dh;
