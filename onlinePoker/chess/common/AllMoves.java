@@ -9,11 +9,11 @@ public class AllMoves {
 	
 	static {
 		single = Arrays.stream(Piece.values())
-					.filter(p -> p != Piece.KING && p.canMoveAttack)
-					.map(p -> p.single)
-					.flatMap(a -> Arrays.stream(a))
-					.distinct()
-					.toArray(int[][]::new);
+				.filter(p -> p != Piece.KING && p.canMoveAttack)
+				.map(p -> p.single)
+				.flatMap(a -> Arrays.stream(a))
+				.distinct()
+				.toArray(int[][]::new);
 		repeat = Arrays.stream(Piece.values())
 				.map(p -> p.repeat)
 				.flatMap(a -> Arrays.stream(a))

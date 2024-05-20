@@ -223,7 +223,6 @@ public class Board {
 		long j = 1L << (dN + dL * 8);
 //		long king = findKing(turn);
 		
-		long hero = turn ? white : black;
 		long enemy = turn ? black : white;
 		
 //		long c = coverage(!turn, enemy, exists);
@@ -348,6 +347,8 @@ public class Board {
 				rightToCastleK_B = false;
 			}
 		}
+		
+		long hero = turn ? white : black;
 		
 		long c = coverage(turn, hero, exists);
 		System.out.println(String.format("%s %d %d %d %d %b", 
@@ -542,6 +543,21 @@ public class Board {
 		return n == dN && 
 				(exists & j) == 0 && 
 				((l == 1 && dL == 3) || (l == 6 && dL == 4));
+	}
+	
+	public boolean isPromoting(int n, int l) {
+		long i = 1L << (l * 8 + n);
+		
+		if (board[n + l * 8] != PAWN) {
+			return false;
+		}
+		
+		if ((white & i) != 0) {
+			return n == 6;
+		}
+		else {
+			return n == 1;
+		}
 	}
 
 	public static boolean isValidIndex(int n, int l) {
