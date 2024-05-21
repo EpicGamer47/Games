@@ -13,11 +13,10 @@ import processing.core.PShape;
 @SuppressWarnings("exports")
 public class ProcessingBoard2 extends Board {
 	public static final int width = 75;
-	public static final Piece[] promotionPieces = {QUEEN, ROOK, BISHOP, KNIGHT};
 	
 	private PApplet parent;
 	private Point lastClick;
-	private Piece promotionClick;
+	private int promotionClick;
 	private List<Point>[] lastClickMoves;
 	private boolean gameOver;
 	
@@ -58,7 +57,7 @@ public class ProcessingBoard2 extends Board {
 		
 		drawDots(turn);
 		
-		if (lastClick != null &&  isPromoting(lastClick.x, lastClick.y)) {
+		if (lastClick != null && isPromoting(lastClick.x, lastClick.y)) {
 			if (turn)
 				drawPromotion(100, 100, WHITE);
 			else
@@ -73,11 +72,18 @@ public class ProcessingBoard2 extends Board {
 		x += 8 * width;
 		y += 2 * width;
 		
-		for (var p : promotionPieces) {
+		for (int i = 0; i < promotionPieces.length; i++) {
+			var p = promotionPieces[i];
+			
 			int tile = (y) % 2 == 0 ? 0xFFb0b0a9 : 0xFF4d6138;
 			
 			parent.fill(tile);
 			parent.rect(x, y, width, width);
+			
+			if (i == promotionClick) {
+				parent.fill(0xbbe5f53d);
+				parent.rect(x, y, width, width);
+			}
 			
 			var img = parent.loadShape(p.getPieceFile(color));
 			parent.shape(img, x, y, width, width);
@@ -222,7 +228,7 @@ public class ProcessingBoard2 extends Board {
 		}
 		
 		if (isPromotionIndex(n, l)) {
-			promotionClick = promotionPieces[l - 2];
+			promotionClick = l - 2;
 			return;
 		}
 		
@@ -238,7 +244,13 @@ public class ProcessingBoard2 extends Board {
 //				System.out.println(lastClickMoves[0] + ", " + lastClickMoves[1]);
 			}
 			else if (lastClick != null && !(lastClick.x == n && lastClick.y == l)) {
-				if (move(lastClick.x, lastClick.y, n, l)) {
+				long side = turn ? 1 : -1;
+				
+				l += isPromoting(lastClick.x, lastClick.y) ? side * promotionClick : 0;
+				
+				boolean move = move(lastClick.x, lastClick.y, n, l);
+				
+				if (move) {
 					lastClick = null;
 					lastClickMoves = null;
 					

@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Board {
-	private static Piece row1[] = {ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
+	private static final Piece row1[] = {ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
+	public static final Piece[] promotionPieces = {QUEEN, ROOK, BISHOP, KNIGHT};
 
 	public static int MOVE_NUM = 0x000F; // shift 0
 	public static int MOVE_LETTER = 0x00F0; // shift 4
@@ -415,7 +416,24 @@ public class Board {
 	}
 	
 	public Moves isValidMove(int n, int l, int dN, int dL) {
-		if (!(isValidIndex(n, l) && isValidIndex(dN, dL)))
+		if (!(isValidIndex(n, l)))
+			return null;
+		
+		Piece p = board[l * 8 + n];
+		
+		
+		if (p == PAWN && !isValidIndex(dN, dL)) {
+			if (!isPromoting(n, l))
+				return null;
+			
+			int pI = dL - 7;
+			dL -= pI;
+			
+			if (!isValidIndex(dN, dL))
+				return null;
+		}
+	
+		if (!isValidIndex(dN, dL))
 			return null;
 		
 		long i = 1L << (l * 8 + n);
@@ -423,8 +441,6 @@ public class Board {
 		
 		if (!canMoveFrom(n, l))
 			return null;
-
-		Piece p = board[l * 8 + n];
 		
 		if (p == PAWN) {
 			if (isDouble(n, l, dN, dL))
@@ -553,10 +569,10 @@ public class Board {
 		}
 		
 		if ((white & i) != 0) {
-			return n == 6;
+			return l == 6;
 		}
 		else {
-			return n == 1;
+			return l == 1;
 		}
 	}
 
