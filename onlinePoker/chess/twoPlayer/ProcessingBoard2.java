@@ -13,9 +13,11 @@ import processing.core.PShape;
 @SuppressWarnings("exports")
 public class ProcessingBoard2 extends Board {
 	public static final int width = 75;
+	public static final Piece[] promotionPieces = {QUEEN, ROOK, BISHOP, KNIGHT};
 	
 	private PApplet parent;
 	private Point lastClick;
+	private Piece promotionClick;
 	private List<Point>[] lastClickMoves;
 	private boolean gameOver;
 	
@@ -37,14 +39,7 @@ public class ProcessingBoard2 extends Board {
 		parent.textAlign(PApplet.CENTER, PApplet.CENTER);
 	}
 
-	public void draw() {
-		if (lastClick != null &&  isPromoting(lastClick.x, lastClick.y)) {
-			if (turn)
-				drawPromotion(100, 100, WHITE);
-			else
-				drawPromotion(parent.width - 100 - width * 8, 100, BLACK);
-		}
-		
+	public void draw() {		
 		drawBackground();
 		
 		for (int l = 0; l < 8; l++) {
@@ -63,17 +58,25 @@ public class ProcessingBoard2 extends Board {
 		
 		drawDots(turn);
 		
+		if (lastClick != null &&  isPromoting(lastClick.x, lastClick.y)) {
+			if (turn)
+				drawPromotion(100, 100, WHITE);
+			else
+				drawPromotion(parent.width - 100 - width * 8, 100, BLACK);
+		}
+		
 		if (gameOver)
 			gameOver();
 	}
 
 	private void drawPromotion(int x, int y, int color) {
-		Piece[] ps = {QUEEN, ROOK, BISHOP, KNIGHT};
+		x += 8 * width;
+		y += 2 * width;
 		
-		for (var p : ps) {
-			int tile = (y) % 2 == 0 ? 0xFFeeeed2 : 0xFF769656;
+		for (var p : promotionPieces) {
+			int tile = (y) % 2 == 0 ? 0xFFb0b0a9 : 0xFF4d6138;
 			
-			parent.fill(color);
+			parent.fill(tile);
 			parent.rect(x, y, width, width);
 			
 			var img = parent.loadShape(p.getPieceFile(color));
@@ -212,13 +215,21 @@ public class ProcessingBoard2 extends Board {
 		if (turn) {
 			n = (mouseX - 100) / width;
 			l = (mouseY - 100) / width;
-			l = 7 - l;
 		}
 		else {
 			n = (mouseX - (parent.width - 100 - width * 8)) / width;
 			l = (mouseY - 100) / width;
-			n = 7 - n;
 		}
+		
+		if (isPromotionIndex(n, l)) {
+			promotionClick = promotionPieces[l - 2];
+			return;
+		}
+		
+		if (turn)
+			l = 7 - l;
+		else
+			n = 7 - n;
 
 		if (Board.isValidIndex(n, l)) {
 			if (canMoveFrom(n, l)) {
@@ -237,5 +248,9 @@ public class ProcessingBoard2 extends Board {
 				}
 			}
 		}
+	}
+	
+	private boolean isPromotionIndex(int n, int l) {
+		return n == 8 && l >= 2 && l <= 5;
 	}
 }
