@@ -246,7 +246,7 @@ public class ProcessingBoard2 extends Board {
 			else if (lastClick != null && !(lastClick.x == n && lastClick.y == l)) {
 				long side = turn ? 1 : -1;
 				
-				l += isPromoting(lastClick.x, lastClick.y) ? side * promotionClick : 0;
+				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
 				boolean move = move(lastClick.x, lastClick.y, n, l);
 				

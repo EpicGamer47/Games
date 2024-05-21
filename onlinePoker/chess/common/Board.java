@@ -212,6 +212,17 @@ public class Board {
 			return false;
 		}
 		
+		switch (move) {
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			dL = Math.max(0, Math.min(dL, 7));
+			break;
+		default:
+			break;
+		}
+		
 		if (!checkMove(n, l, dN, dL, move)) {
 			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
 			return false;
@@ -317,6 +328,27 @@ public class Board {
 				black |= sq1;
 			}
 			break;
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Moves.PROMOTION_Q.ordinal()];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}
+			break;
 		}
 		
 		if (move == DOUBLE)
@@ -381,6 +413,10 @@ public class Board {
 		long exists = this.exists;
 		
 		switch (move) {
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
 		case DOUBLE:
 		case NORMAL:
 			if (board[l * 8 + n] == KING && ((c & j) != 0))
@@ -420,23 +456,16 @@ public class Board {
 			return null;
 		
 		Piece p = board[l * 8 + n];
+		long i = 1L << (l * 8 + n);
+		long side = ((white & i) != 0) ? 1 : -1;
 		
-		
-		if (p == PAWN && !isValidIndex(dN, dL)) {
-			if (!isPromoting(n, l))
-				return null;
-			
-			int pI = dL - 7;
-			dL -= pI;
-			
-			if (!isValidIndex(dN, dL))
-				return null;
+		if (p == PAWN && isPromoting(n, l) && !(isValidIndex(dN, dL))) {
+			return isValidPromotionMove(n, l, dN, dL);
 		}
 	
 		if (!isValidIndex(dN, dL))
 			return null;
-		
-		long i = 1L << (l * 8 + n);
+
 		long j = 1L << (dL * 8 + dN);
 		
 		if (!canMoveFrom(n, l))
@@ -459,7 +488,6 @@ public class Board {
 		}
 		
 		long enemy = ((white & i) > 0) ? black : white;
-		long side = ((white & i) > 0) ? 1 : -1;
 		
 		if ((exists & j) == 0 || ((enemy & j) != 0 && p.canMoveAttack)) {
 			for (int[] d : p.single) {
@@ -491,6 +519,28 @@ public class Board {
 		}
 		
 		return null;
+	}
+
+	private Moves isValidPromotionMove(int n, int l, int dN, int dL) {
+		long i = 1L << (l * 8 + n);
+		long side = ((white & i) != 0) ? 1 : -1;
+		
+		int pI = dL - 7 - 1;
+		
+		if ((black & i) != 0)
+			pI = 0 - dL - 1;
+		
+		dL -= (pI + 1) * side;
+		
+		var check = isValidMove(n, l, dN, dL);
+		
+		if (check == null) {
+			return null;
+		}
+		
+		Moves[] promotions = {PROMOTION_Q, PROMOTION_R, PROMOTION_B, PROMOTION_N};
+		
+		return promotions[pI];
 	}
 
 	public boolean canMoveFrom(int n, int l) {
