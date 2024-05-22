@@ -239,11 +239,6 @@ public class Board {
 		
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
-//		long king = findKing(turn);
-		
-		long enemy = turn ? black : white;
-		
-//		long c = coverage(!turn, enemy, exists);
 		
 		if (board[dL * 8 + dN] != null || board[l * 8 + n] == PAWN)
 			movesSinceLastCapture = 0;
@@ -388,7 +383,7 @@ public class Board {
 			}
 		}
 		
-		long hero = turn ? white : black;
+//		long hero = turn ? white : black;
 		
 		long c = coverage(true, white, exists);
 		long c2 = coverage(false, black, exists);
@@ -432,8 +427,8 @@ public class Board {
 		case PROMOTION_R:
 		case DOUBLE:
 		case NORMAL:
-			if (board[l * 8 + n] == KING && ((c & j) != 0))
-				return false;
+			if (board[l * 8 + n] == KING)
+				return (c & j) == 0;
 			
 			var temp = board[dL * 8 + dN];
 			board[dL * 8 + dN] = board[l * 8 + n];
@@ -605,10 +600,10 @@ public class Board {
 	public boolean isEnPassant(int n, int l, int dN, int dL) {
 		int deltaL = dL - l;
 		
-//		long i = 1L << (l * 8 + n);
+		long i = 1L << (l * 8 + n);
 		long k = 1L << (l * 8 + dN);
 		
-		long enemy = (white & k) != 0 ? black : white;
+		long enemy = (white & i) != 0 ? black : white;
 		
 		return lastDouble == dN &&
 				deltaL * deltaL == 1 && 
@@ -747,10 +742,11 @@ public class Board {
 	}
 
 	public long findKing(boolean side) {
-		if (side && (rightToCastleK_W || rightToCastleQ_W))
-			return 1L << (4 + 0 * 8);
-		if (!side && (rightToCastleK_B || rightToCastleQ_B))
-			return 1L << (4 + 7 * 8);
+		// Premature optimization is the root of all evil
+//		if (side && (rightToCastleK_W || rightToCastleQ_W))
+//			return 1L << (4 + 0 * 8);
+//		if (!side && (rightToCastleK_B || rightToCastleQ_B))
+//			return 1L << (4 + 7 * 8);
 			
 		int n, l;
 		
@@ -765,7 +761,7 @@ public class Board {
 			}
 		}
 		
-		throw new IllegalStateException("Each color should always have a king on the board");
+		throw new IllegalStateException("Each color should always have a king on the board\nBoard:" + toString());
 	}
 
 	//DEBUG
