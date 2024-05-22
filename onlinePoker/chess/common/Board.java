@@ -362,7 +362,7 @@ public class Board {
 		else
 			lastDouble = -1;
 		
-		if (board[l * 8 + n] == ROOK) {
+		if (board[dL * 8 + dN] == ROOK) {
 			if (turn && l == 0) {
 				if (n == 0)
 					rightToCastleQ_W = false;
@@ -376,7 +376,8 @@ public class Board {
 					rightToCastleK_B = false;
 			}
 		}
-		if (board[l * 8 + n] == KING) {
+		
+		if (board[dL * 8 + dN] == KING) {
 			if (turn) {
 				rightToCastleQ_W = false;
 				rightToCastleK_W = false;
@@ -447,7 +448,7 @@ public class Board {
 			board[l * 8 + n] = board[dL * 8 + dN];
 			board[dL * 8 + dN] = temp;
 			
-			if (board[l * 8 + n] != KING && (c & king) != 0) {
+			if ((c & king) != 0) {
 				return false;
 			}
 			
