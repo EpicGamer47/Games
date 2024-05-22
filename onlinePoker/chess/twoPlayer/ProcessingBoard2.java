@@ -24,9 +24,6 @@ public class ProcessingBoard2 extends Board {
 		super();
 		this.parent = parent;
 		
-		lastClick = null;
-		lastClickMoves = null;
-		
 		setupProcessing();
 	}
 	
@@ -112,11 +109,13 @@ public class ProcessingBoard2 extends Board {
 		parent.textSize(100);
 		
 		long king = this.findKing(turn);
-		long hero = turn ? white : black;
+		long enemy = turn ? black : white;
+		long c = coverage(turn, enemy, exists);
 		
-		String msg = "50 move rule - draw";
-		
-		if ((hero & king) == 0)
+		String msg;
+		if (movesSinceLastCapture >= 50)
+			msg = "50 move rule - draw";
+		if ((c & king) == 0)
 			msg = "Stalemate";
 		else
 			msg = "Checkmate: " + (turn ? "Black" : "White") + " wins!";
@@ -196,7 +195,7 @@ public class ProcessingBoard2 extends Board {
 		
 		if (lastMove != null && 
 				((lastMove[0] == n && lastMove[1] == l) || 
-						(lastMove[2] == n && lastMove[3] == l))) {
+					(lastMove[2] == n && lastMove[3] == l))) {
 			parent.fill(0x88ecf76e);
 			parent.rect(x1, y1, width, width);
 		}
@@ -248,13 +247,14 @@ public class ProcessingBoard2 extends Board {
 				
 				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
-				boolean move = move(lastClick.x, lastClick.y, n, l);
+				boolean hasMoved = move(lastClick.x, lastClick.y, n, l);
 				
-				if (move) {
+				if (hasMoved) {
 					lastClick = null;
 					lastClickMoves = null;
+					promotionClick = 0;
 					
-					if (getAllMoves(turn).size() == 0) {
+					if (getAllMoves(turn).size() == 0 || movesSinceLastCapture >= 50) {
 						gameOver = true;
 					}
 				}

@@ -17,6 +17,7 @@ public class ProcessingBoard1 extends Board {
 	
 	private PApplet parent;
 	private Point lastClick;
+	private int promotionClick;
 	private List<Point>[] lastClickMoves;
 	private boolean gameOver;
 	public final boolean playerSide;
@@ -28,8 +29,6 @@ public class ProcessingBoard1 extends Board {
 		this.playerSide = playerSide;
 		
 		ai = new RandomAI(this);
-		lastClick = null;
-		lastClickMoves = null;
 		
 		setupProcessing();
 	}
@@ -63,6 +62,13 @@ public class ProcessingBoard1 extends Board {
 		}
 		
 		drawDots(turn);
+		
+		if (lastClick != null && isPromoting(lastClick.x, lastClick.y)) {
+			if (playerSide)
+				drawPromotion(WHITE);
+			else
+				drawPromotion(BLACK);
+		}
 		
 		if (gameOver)
 			gameOver();
@@ -141,9 +147,28 @@ public class ProcessingBoard1 extends Board {
 		}
 	}
 
-	private void drawPromotion(int x) {
-		// TODO Auto-generated method stub
+	private void drawPromotion(int color) {
+		int x = 100 + 8 * width;
+		int y = 100 + 2 * width;
 		
+		for (int i = 0; i < promotionPieces.length; i++) {
+			var p = promotionPieces[i];
+			
+			int tile = (y) % 2 == 0 ? 0xFFb0b0a9 : 0xFF4d6138;
+			
+			parent.fill(tile);
+			parent.rect(x, y, width, width);
+			
+			if (i == promotionClick) {
+				parent.fill(0xbbe5f53d);
+				parent.rect(x, y, width, width);
+			}
+			
+			var img = parent.loadShape(p.getPieceFile(color));
+			parent.shape(img, x, y, width, width);
+			
+			y += width;
+		}
 	}
 
 	private void drawSquare(int n, int l, int x, int y, boolean side) {
@@ -198,7 +223,12 @@ public class ProcessingBoard1 extends Board {
 	public void click(int mouseX, int mouseY) {
 		int n = (mouseX - 100) / width;
 		int l = (mouseY - 100) / width;
-
+		
+		if (isPromotionIndex(n, l)) {
+			promotionClick = l - 2;
+			return;
+		}
+		
 		if (turn)
 			l = 7 - l;
 		else
@@ -211,9 +241,16 @@ public class ProcessingBoard1 extends Board {
 //				System.out.println(lastClickMoves[0] + ", " + lastClickMoves[1]);
 			}
 			else if (lastClick != null && !(lastClick.x == n && lastClick.y == l)) {
-				if (move(lastClick.x, lastClick.y, n, l)) {
+				long side = turn ? 1 : -1;
+				
+				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
+				
+				boolean hasMoved = move(lastClick.x, lastClick.y, n, l);
+				
+				if (hasMoved) {
 					lastClick = null;
 					lastClickMoves = null;
+					promotionClick = 0;
 					
 					if (getAllMoves(turn).size() == 0) {
 						gameOver = true;
@@ -221,5 +258,9 @@ public class ProcessingBoard1 extends Board {
 				}
 			}
 		}
+	}
+	
+	private boolean isPromotionIndex(int n, int l) {
+		return n == 8 && l >= 2 && l <= 5;
 	}
 }

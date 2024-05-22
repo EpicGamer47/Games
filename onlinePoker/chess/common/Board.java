@@ -5,6 +5,7 @@ import static common.Piece.*;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -228,6 +229,11 @@ public class Board {
 			return false;
 		}
 		
+		System.out.println(
+				getAllMoves(n, l).stream()
+					.map(a -> Arrays.toString(a) + ", ")
+					.reduce("", (curr, next) -> curr + next));
+		
 		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
 		long sq1 = 0x7L << (l * 8 + 1);
 		
@@ -383,12 +389,18 @@ public class Board {
 		
 		long hero = turn ? white : black;
 		
-		long c = coverage(turn, hero, exists);
+		long c = coverage(true, white, exists);
+		long c2 = coverage(false, black, exists);
+		
 		System.out.println(String.format("%s %d %d %d %d %b", 
 				move.toString(), n, l, dN, dL, 
 				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
-				(c & findKing(!turn)) == 0
-				));
+				(c & findKing(!turn)) == 0)
+				);
+		
+//		if ((c & findKing(!turn)) != 0)
+			System.out.println(toString(c));
+			System.out.println(toString(c2));
 		
 		turn = !turn;
 		movesSinceLastCapture++;
@@ -487,7 +499,7 @@ public class Board {
 				return CASTLE_QUEEN;
 		}
 		
-		long enemy = ((white & i) > 0) ? black : white;
+		long enemy = ((white & i) != 0) ? black : white;
 		
 		if ((exists & j) == 0 || ((enemy & j) != 0 && p.canMoveAttack)) {
 			for (int[] d : p.single) {
@@ -567,7 +579,6 @@ public class Board {
 			if (!rightToCastleK_B || !(dN == 6 && dL == 7))
 				return false;
 		}
-			
 		
 		long s = 0b0110L << (l * 8 + 4);
 		
@@ -593,7 +604,7 @@ public class Board {
 	public boolean isEnPassant(int n, int l, int dN, int dL) {
 		int deltaL = dL - l;
 		
-		long i = 1L << (l * 8 + n);
+//		long i = 1L << (l * 8 + n);
 		long k = 1L << (l * 8 + dN);
 		
 		long enemy = (white & k) != 0 ? black : white;
@@ -604,11 +615,16 @@ public class Board {
 	}
 
 	public boolean isDouble(int n, int l, int dN, int dL) {
+		long i = 1L << (l * 8 + n);
 		long j = 1L << (dL * 8 + dN);
+		
+		int side = (white & i) != 0 ? 1 : -1;
+		long k = 1L << ((l + side) * 8 + n);
 		
 		return n == dN && 
 				(exists & j) == 0 && 
-				((l == 1 && dL == 3) || (l == 6 && dL == 4));
+				((l == 1 && dL == 3) || (l == 6 && dL == 4)) &&
+				(exists & k) == 0;
 	}
 	
 	public boolean isPromoting(int n, int l) {
@@ -671,13 +687,12 @@ public class Board {
 	public long coverage(boolean side, long hero, long exists) {
 		long c = 0L;
 		
-		for (int n = 0; n < 8; n++) {
-			for (int l = 0; l < 8; l++) {
+		for (int n = 0; n < 8; n++)
+			for (int l = 0; l < 8; l++)
 				c |= coverage(n, l, side, hero, exists);
-			}
-		}
 		
 		return (c & ~findKing(side)); // no need to protect king
+//		return ~findKing(!side);
 	}
 	
 	public long coverage(int n, int l, boolean side, long hero, long exists) {
@@ -699,8 +714,7 @@ public class Board {
 				if (isValidIndex(dN, dL)) // empty spaces count
 					out |= j;
 			}
-		}
-			
+		}	
 		
 		for (int[] d : p.repeat) {
 			int iN = n + d[0], iL = l + d[1] * sign;
@@ -775,7 +789,7 @@ public class Board {
 			for (int n = 0; n < 8; n++) {
 				long i = 1L << (l * 8 + n);
 				
-				if ((white & i) > 0)
+				if ((white & i) != 0)
 					out.append(board[l * 8 + n].name().charAt(0) + "w, ");
 				else if ((black & i) != 0)
 					out.append(board[l * 8 + n].name().charAt(0) + "b, ");
@@ -815,7 +829,7 @@ public class Board {
 			for (int n = 0; n < 8; n++) {
 				long i = 1L << (l * 8 + n);
 				
-				if ((exists & i) > 0)
+				if ((exists & i) != 0)
 					out.append("xx, ");
 				else
 					out.append("  , ");
