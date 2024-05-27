@@ -8,6 +8,16 @@ import common.Piece;
 import common.Ranker;
 
 public class PointRanker implements Ranker {
+	double mult;
+	
+	public PointRanker() { 
+		mult = 1;
+	}
+	
+	public PointRanker(double mult) {
+		this.mult = mult;
+	}
+	
 	public static EnumMap<Piece, double[]> map;
 	
 	static {
@@ -81,11 +91,12 @@ public class PointRanker implements Ranker {
 
 	@Override
 	public double rank(Board b, int n, int l) {
+		final double standard = 10 / 7;
 		long i = 1L << (n + l * 8);
 		
 		if ((b.white & i) != 0)
-			return   map.get(b.board[n + l * 8])[n + l * 8];
+			return  standard * map.get(b.board[n + l * 8])[n + l * 8];
 		else
-			return -(map.get(b.board[n + l * 8])[n + (7 - l) * 8]);
+			return -standard * map.get(b.board[n + l * 8])[n + (7 - l) * 8];
 	}
 }

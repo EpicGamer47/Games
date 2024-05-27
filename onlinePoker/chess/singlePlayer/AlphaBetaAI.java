@@ -1,10 +1,21 @@
 package singlePlayer;
 
+import static common.Move.DOUBLE;
+import static common.Piece.KING;
+import static common.Piece.PAWN;
+import static common.Piece.ROOK;
+
+import java.util.Arrays;
+
 import common.AI;
 import common.Board;
+import common.Move;
+import common.Ranker;
 
-public class RandomAI extends AI {
-	public RandomAI(Board b) {
+public class AlphaBetaAI extends AI {
+	static final Ranker r = new CoverageRanker();
+	
+	public AlphaBetaAI(Board b) {
 		super(b);
 	}
 	

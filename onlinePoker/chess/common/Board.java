@@ -1,6 +1,6 @@
 package common;
 
-import static common.Moves.*;
+import static common.Move.*;
 import static common.Piece.*;
 
 import java.awt.Point;
@@ -333,7 +333,7 @@ public class Board {
 		case PROMOTION_N:
 		case PROMOTION_Q:
 		case PROMOTION_R:
-			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Moves.PROMOTION_Q.ordinal()];
+			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Move.PROMOTION_Q.ordinal()];
 			board[l * 8 + n] = null;
 			
 			exists &= ~i;
@@ -404,8 +404,277 @@ public class Board {
 
 		return true;
 	}
+	
+	public MoveData moveWithData(int n, int l, int dN, int dL) {
+		var move = isValidMove(n, l, dN, dL);
+		
+		if (move == null) {
+			System.out.println(String.format("ILLEGALFAIL %d %d %d %d", n, l, dN, dL));
+			return null;
+		}
+		
+		switch (move) {
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			dL = Math.max(0, Math.min(dL, 7));
+			break;
+		default:
+			break;
+		}
+		
+		if (!checkMove(n, l, dN, dL, move)) {
+			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
+			return null;
+		}
+		
+		System.out.println(
+				getAllMoves(n, l).stream()
+					.map(a -> Arrays.toString(a) + ", ")
+					.reduce("", (curr, next) -> curr + next));
+		
+		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
+		long sq1 = 0x7L << (l * 8 + 1);
+		
+		long i = 1L << (n + l * 8);
+		long j = 1L << (dN + dL * 8);
+		
+		MoveData out = new MoveData();
 
-	public boolean checkMove(int n, int l, int dN, int dL, Moves move) {
+		Position from = new Position(n, l);
+		Position to = new Position(dN, dL);
+		
+		if (board[dL * 8 + dN] != null || board[l * 8 + n] == PAWN)
+			movesSinceLastCapture = 0;
+		
+		switch (move) {
+		case DOUBLE:
+		case NORMAL:
+			out.p = new Position[] {from, to};
+			
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}	
+			
+			break;
+		case EN_PASSANT: // not gonna bother with discovered check detection
+			out.p = new Position[] {from, to, new Position(dN, dL)};
+			
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			board[l * 8 + dN] = null;
+			
+			long k1 = 1L << (l * 8 + dN); // en-passanted pawn
+			
+			exists &= ~i;
+			exists &= ~k1;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~k1;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~k1;
+				black &= ~i;
+				black |= j;
+			}
+			
+			break;
+		case CASTLE_KING:
+			out.p = new Position[] {from, to, new Position(5, l), new Position(6, l)};
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 6] = KING;
+			board[l * 8 + 5] = ROOK;
+			
+			sk1 = 0b0110L << (l * 8 + 4);
+			long sk2 = 0b1001L << (l * 8 + 4);
+			
+			exists &= ~sk2;
+			exists |= sk1;
+			
+			if (turn) {
+				white &= ~sk2;
+				white |= sk1;
+			}
+			else {
+				black &= ~sk2;
+				black |= sk1;
+			}
+			break;
+		case CASTLE_QUEEN:
+			out.p = new Position[] {from, to, new Position(2, l), new Position(3, l)};
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 2] = KING;
+			board[l * 8 + 3] = ROOK;
+			
+			sq1 = 0b01100L << (l * 8 + 0);
+			long sq2 = 0b10001L << (l * 8 + 0);
+			
+			exists &= ~sq2;
+			exists |= sq1;
+			
+			if (turn) {
+				white &= ~sq2;
+				white |= sq1;
+			}
+			else {
+				black &= ~sq2;
+				black |= sq1;
+			}
+			break;
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			out.p = new Position[] {from, to};
+			
+			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Move.PROMOTION_Q.ordinal()];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}
+			break;
+		}
+		
+		if (move == DOUBLE)
+			lastDouble = n;
+		else
+			lastDouble = -1;
+		
+		if (board[dL * 8 + dN] == ROOK) {
+			if (turn && l == 0) {
+				if (n == 0)
+					rightToCastleQ_W = false;
+				else if (n == 7)
+					rightToCastleK_W = false;
+			}
+			else if (!turn && l == 7) {
+				if (n == 0)
+					rightToCastleQ_B = false;
+				else if (n == 7)
+					rightToCastleK_B = false;
+			}
+		}
+		
+		if (board[dL * 8 + dN] == KING) {
+			if (turn) {
+				rightToCastleQ_W = false;
+				rightToCastleK_W = false;
+			}
+			else {
+				rightToCastleQ_B = false;
+				rightToCastleK_B = false;
+			}
+		}
+		
+//		long hero = turn ? white : black;
+		
+		long c = coverage(true, white, exists);
+		long c2 = coverage(false, black, exists);
+		
+		System.out.println(String.format("%s %d %d %d %d %b", 
+				move.toString(), n, l, dN, dL, 
+				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
+				(c & findKing(!turn)) == 0)
+				);
+		
+//		if ((c & findKing(!turn)) != 0)
+			System.out.println(toString(c));
+			System.out.println(toString(c2));
+		
+		turn = !turn;
+		movesSinceLastCapture++;
+		lastMove = new int[] {n, l, dN, dL};
+
+		return out;
+	}
+	
+	public class Position {
+		public Position() { }
+		
+		public Position(int n, int l) {
+			this.n = n;
+			this.l = l;
+			this.p = board[n + l * 8];
+		}
+		
+		public Position(int n, int l, Piece p) {
+			this.n = n;
+			this.l = l;
+			this.p = p;
+		}
+
+		int n, l;
+		Piece p;
+	}
+	
+	public class MoveData {
+		public MoveData() {
+			white = Board.this.white;
+			black = Board.this.black;
+			exists = Board.this.exists;
+			cKW = Board.this.rightToCastleK_W;
+			cQW = Board.this.rightToCastleQ_W;
+			cKB = Board.this.rightToCastleK_B;
+			cQB = Board.this.rightToCastleQ_B;
+			d = Board.this.lastDouble;
+		}
+		
+		public long white, black, exists;
+		public Move move;
+		public Position[] p;
+		boolean cKW, cQW, cKB, cQB;
+		int d;
+	}
+	
+	public void revert(MoveData md) {
+		white = md.white;
+		black = md.black;
+		exists = md.exists;
+		
+		rightToCastleK_W = md.cKW;
+		rightToCastleQ_W = md.cQW;
+		rightToCastleK_B = md.cKB;
+		rightToCastleQ_B = md.cQB;
+		lastDouble = md.d;
+		
+		for (var pos : md.p) {
+			board[pos.n + pos.l * 8] = pos.p;
+		}
+	}
+
+	public boolean checkMove(int n, int l, int dN, int dL, Move move) {
 		if (!isValidIndex(dN, dL)) {
 			return false;
 		}
@@ -459,7 +728,7 @@ public class Board {
 		throw new IllegalStateException("how did this even get here");
 	}
 	
-	public Moves isValidMove(int n, int l, int dN, int dL) {
+	public Move isValidMove(int n, int l, int dN, int dL) {
 		if (!(isValidIndex(n, l)))
 			return null;
 		
@@ -529,7 +798,7 @@ public class Board {
 		return null;
 	}
 
-	private Moves isValidPromotionMove(int n, int l, int dN, int dL) {
+	private Move isValidPromotionMove(int n, int l, int dN, int dL) {
 		long i = 1L << (l * 8 + n);
 		long side = ((white & i) != 0) ? 1 : -1;
 		
@@ -546,7 +815,7 @@ public class Board {
 			return null;
 		}
 		
-		Moves[] promotions = {PROMOTION_Q, PROMOTION_R, PROMOTION_B, PROMOTION_N};
+		Move[] promotions = {PROMOTION_Q, PROMOTION_R, PROMOTION_B, PROMOTION_N};
 		
 		return promotions[pI];
 	}
@@ -762,6 +1031,10 @@ public class Board {
 		}
 		
 		throw new IllegalStateException("Each color should always have a king on the board\nBoard:" + toString());
+	}
+
+	public boolean isGameOver() {
+		return getAllMoves(turn).isEmpty() || movesSinceLastCapture >= 50;
 	}
 
 	//DEBUG

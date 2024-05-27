@@ -61,7 +61,7 @@ public class ProcessingBoard2 extends Board {
 				drawPromotion(parent.width - 100 - width * 8, 100, BLACK);
 		}
 		
-		if (gameOver)
+		if (isGameOver())
 			gameOver();
 	}
 

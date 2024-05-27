@@ -70,7 +70,7 @@ public class ProcessingBoard1 extends Board {
 				drawPromotion(BLACK);
 		}
 		
-		if (gameOver)
+		if (isGameOver())
 			gameOver();
 	}
 	

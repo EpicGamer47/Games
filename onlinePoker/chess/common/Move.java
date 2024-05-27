@@ -1,6 +1,6 @@
 package common;
 
-public enum Moves {
+public enum Move {
 	NORMAL, 
 	DOUBLE,
 	PROMOTION_Q,
