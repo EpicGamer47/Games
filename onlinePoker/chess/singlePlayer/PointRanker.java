@@ -21,6 +21,8 @@ public class PointRanker implements Ranker {
 	public static EnumMap<Piece, double[]> map;
 	
 	static {
+		map = new EnumMap<Piece, double[]>(Piece.class);
+		
 		map.put(PAWN, new double[] {
                    0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
                    5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0,
@@ -92,6 +94,10 @@ public class PointRanker implements Ranker {
 	@Override
 	public double rank(Board b, int n, int l) {
 		final double standard = 10 / 7;
+		
+		if (b.board[n + l * 8] == null)
+			return 0;
+		
 		long i = 1L << (n + l * 8);
 		
 		if ((b.white & i) != 0)

@@ -87,12 +87,12 @@ public class Board {
 		lastMove = null;
 	}
 	
-	public List<int[]> getAllMoves(boolean side) {
+	public List<int[]> getAllMoves(boolean turn) {
 		ArrayList<int[]> out = new ArrayList<int[]>();
 		
 		for (int n = 0; n < 8; n++) {
 			for (int l = 0; l < 8; l++) {
-				out.addAll(getAllMoves(n, l, side));
+				out.addAll(getAllMoves(n, l, turn));
 			}
 		}
 		
@@ -116,14 +116,14 @@ public class Board {
 		
 		ArrayList<int[]> out = new ArrayList<int[]>();
 
-		int sign = turn ? 1 : -1;
+		int sign = side ? 1 : -1;
 		Piece p = board[l * 8 + n];
 		
 		for (int[] d : p.single) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
 			if (isValidSpace(p, dN, dL, enemy) &&
-					checkMove(n, l, dN, dL, NORMAL))
+					checkMove(n, l, dN, dL, NORMAL, side))
 				out.add(new int[] {n, l, dN, dL});
 		}
 		
@@ -133,26 +133,26 @@ public class Board {
 			long k = 1L << (iN + iL * 8);
 			
 			while ((exists & k) == 0 && 
-					checkMove(n, l, iN, iL, NORMAL)) {
+					checkMove(n, l, iN, iL, NORMAL, side)) {
 				out.add(new int[] {n, l, iN, iL});
 				iN += d[0];
 				iL += d[1] * sign;
 				k = 1L << (iN + iL * 8);
 			}
 			
-			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, NORMAL))
+			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, NORMAL, side))
 				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL))
+			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, side))
 				out.add(new int[] {n, l, dN, dL});	
 		}
 		
 		if (p == PAWN) {
-			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, DOUBLE))
+			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, DOUBLE, side))
 				out.add(new int[] {n, l, n, l + 2 * sign});	
 			
 			if (isEnPassant(n, l, n + 1, l + 1 * sign))
@@ -163,10 +163,10 @@ public class Board {
 		}
 		
 		if (p == KING) {
-			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, CASTLE_KING)) // castle king
+			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, CASTLE_KING, side)) // castle king
 				out.add(new int[] {n, l, 6, l});
 			
-			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, CASTLE_QUEEN)) // castle queen
+			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, CASTLE_QUEEN, side)) // castle queen
 				out.add(new int[] {n, l, 2, l});
 		}
 		
@@ -224,7 +224,7 @@ public class Board {
 			break;
 		}
 		
-		if (!checkMove(n, l, dN, dL, move)) {
+		if (!checkMove(n, l, dN, dL, move, turn)) {
 			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
 			return false;
 		}
@@ -405,11 +405,11 @@ public class Board {
 		return true;
 	}
 	
-	public MoveData moveWithData(int n, int l, int dN, int dL) {
-		var move = isValidMove(n, l, dN, dL);
+	public MoveData forceMove(int n, int l, int dN, int dL, boolean turn) {
+		var move = isValidMove(n, l, dN, dL, turn);
 		
 		if (move == null) {
-			System.out.println(String.format("ILLEGALFAIL %d %d %d %d", n, l, dN, dL));
+//			System.out.println(String.format("ILLEGALFAIL %d %d %d %d", n, l, dN, dL));
 			return null;
 		}
 		
@@ -424,15 +424,15 @@ public class Board {
 			break;
 		}
 		
-		if (!checkMove(n, l, dN, dL, move)) {
-			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
+		if (!checkMove(n, l, dN, dL, move, turn)) {
+//			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
 			return null;
 		}
 		
-		System.out.println(
-				getAllMoves(n, l).stream()
-					.map(a -> Arrays.toString(a) + ", ")
-					.reduce("", (curr, next) -> curr + next));
+//		System.out.println(
+//				getAllMoves(n, l).stream()
+//					.map(a -> Arrays.toString(a) + ", ")
+//					.reduce("", (curr, next) -> curr + next));
 		
 		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
 		long sq1 = 0x7L << (l * 8 + 1);
@@ -600,22 +600,18 @@ public class Board {
 		
 //		long hero = turn ? white : black;
 		
-		long c = coverage(true, white, exists);
-		long c2 = coverage(false, black, exists);
+//		long c = coverage(true, white, exists);
+//		long c2 = coverage(false, black, exists);
 		
-		System.out.println(String.format("%s %d %d %d %d %b", 
-				move.toString(), n, l, dN, dL, 
-				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
-				(c & findKing(!turn)) == 0)
-				);
+//		System.out.println(String.format("%s %d %d %d %d %b", 
+//				move.toString(), n, l, dN, dL, 
+//				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
+//				(c & findKing(!turn)) == 0)
+//				);
 		
-//		if ((c & findKing(!turn)) != 0)
-			System.out.println(toString(c));
-			System.out.println(toString(c2));
-		
-		turn = !turn;
-		movesSinceLastCapture++;
-		lastMove = new int[] {n, l, dN, dL};
+////		if ((c & findKing(!turn)) != 0)
+//			System.out.println(toString(c));
+//			System.out.println(toString(c2));
 
 		return out;
 	}
@@ -659,6 +655,9 @@ public class Board {
 	}
 	
 	public void revert(MoveData md) {
+		if (md == null)
+			return;
+		
 		white = md.white;
 		black = md.black;
 		exists = md.exists;
@@ -674,7 +673,7 @@ public class Board {
 		}
 	}
 
-	public boolean checkMove(int n, int l, int dN, int dL, Move move) {
+	public boolean checkMove(int n, int l, int dN, int dL, Move move, boolean turn) {
 		if (!isValidIndex(dN, dL)) {
 			return false;
 		}
@@ -729,6 +728,10 @@ public class Board {
 	}
 	
 	public Move isValidMove(int n, int l, int dN, int dL) {
+		return isValidMove(n, l, dN, dL, turn);
+	}
+	
+	public Move isValidMove(int n, int l, int dN, int dL, boolean turn) {
 		if (!(isValidIndex(n, l)))
 			return null;
 		
@@ -745,7 +748,7 @@ public class Board {
 
 		long j = 1L << (dL * 8 + dN);
 		
-		if (!canMoveFrom(n, l))
+		if (!canMoveFrom(n, l, turn))
 			return null;
 		
 		if (p == PAWN) {
@@ -820,7 +823,7 @@ public class Board {
 		return promotions[pI];
 	}
 
-	public boolean canMoveFrom(int n, int l) {
+	public boolean canMoveFrom(int n, int l, boolean turn) {
 		long i = 1L << (l * 8 + n);
 		
 		if (turn)
@@ -867,6 +870,9 @@ public class Board {
 	}
 
 	public boolean isEnPassant(int n, int l, int dN, int dL) {
+		if (!isValidIndex(dN, dL))
+			return false;
+		
 		int deltaL = dL - l;
 		
 		long i = 1L << (l * 8 + n);
@@ -943,6 +949,25 @@ public class Board {
 		return (out & ~findKing(side));
 	}
 	
+	public long coverage(long i) {
+		int k = Long.numberOfTrailingZeros(i) + 1;
+		int n = k % 8, l = k / 8;
+		boolean side = (white & i) != 0;
+		
+		long hero = side ? white : black;
+		
+		return coverage(n, l, side, hero, exists);
+	}
+	
+	public long coverage(int n, int l) {
+		long i = 1L << (n + l * 8);
+		boolean side = (white & i) != 0;
+		
+		long hero = side ? white : black;
+		
+		return coverage(n, l, side, hero, exists);
+	}
+	
 	public long coverage(int n, int l, boolean side) {
 		long hero = side ? white : black;
 		
@@ -1012,6 +1037,7 @@ public class Board {
 
 	public long findKing(boolean side) {
 		// Premature optimization is the root of all evil
+		
 //		if (side && (rightToCastleK_W || rightToCastleQ_W))
 //			return 1L << (4 + 0 * 8);
 //		if (!side && (rightToCastleK_B || rightToCastleQ_B))

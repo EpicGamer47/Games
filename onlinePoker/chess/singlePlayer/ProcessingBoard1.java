@@ -28,7 +28,7 @@ public class ProcessingBoard1 extends Board {
 		this.parent = parent;
 		this.playerSide = playerSide;
 		
-		ai = new RandomAI(this);
+		ai = new AlphaBetaAI(this, 1);
 		
 		setupProcessing();
 	}
@@ -235,7 +235,7 @@ public class ProcessingBoard1 extends Board {
 			n = 7 - n;
 
 		if (Board.isValidIndex(n, l)) {
-			if (canMoveFrom(n, l)) {
+			if (canMoveFrom(n, l, turn)) {
 				lastClick = new Point(n, l);
 				lastClickMoves = getAllEndPoints(n, l);
 //				System.out.println(lastClickMoves[0] + ", " + lastClickMoves[1]);

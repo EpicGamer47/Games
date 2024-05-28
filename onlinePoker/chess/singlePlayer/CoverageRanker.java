@@ -21,6 +21,8 @@ public class CoverageRanker implements Ranker {
 	public static EnumMap<Piece, Integer> vals;
 	
 	static {
+		vals = new EnumMap<Piece, Integer>(Piece.class);
+		
 		vals.put(PAWN, 1);
 		vals.put(KNIGHT, 2);
 		vals.put(BISHOP, 1);
@@ -45,7 +47,7 @@ public class CoverageRanker implements Ranker {
 	public double rank(Board b, int n, int l) {
 		final double standard = 10 / 7;
 		
-		if (b.board[n + l * 8] == KING)
+		if (b.board[n + l * 8] == KING || b.board[n + l * 8] == null)
 			return 0;
 		
 		long i = 1L << (n + l * 8);

@@ -22,6 +22,8 @@ public class ValueRanker implements Ranker {
 	public static EnumMap<Piece, Double> vals;
 	
 	static {
+		vals = new EnumMap<Piece, Double>(Piece.class);
+		
 		vals.put(PAWN, 10.0);
 		vals.put(KNIGHT, 30.0);
 		vals.put(BISHOP, 30.0);
@@ -32,9 +34,11 @@ public class ValueRanker implements Ranker {
 	
 	@Override
 	public double rank(Board b, int n, int l) {
-		long i = 1L << (n + l * 8);
+		if (b.board[n + l * 8] == null)
+			return 0;
 		
-		double val = vals.get(b.board[n + (7 - l) * 8]);
+		long i = 1L << (n + l * 8);
+		double val = vals.get(b.board[n + l * 8]);
 		
 		if ((b.white & i) != 0)
 			return  val * mult;

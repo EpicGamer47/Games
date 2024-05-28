@@ -1,7 +1,4 @@
-package singlePlayer;
-
-import common.Board;
-import common.Ranker;
+package common;
 
 public class MultiRanker implements Ranker {
 
