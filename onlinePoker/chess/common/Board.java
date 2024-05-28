@@ -105,25 +105,50 @@ public class Board {
 		return getAllMoves(n, l, (white & i) != 0);
 	}
 	
-	public List<int[]> getAllMoves(int n, int l, boolean side) {
+	public List<int[]> getAllMoves(int n, int l, boolean turn) {
 		long i = 1L << (n + l * 8);
 		
-		long enemy = side ? black : white;
-		long hero = side ? white : black;
+		long enemy = turn ? black : white;
+		long hero = turn ? white : black;
 		
 		if ((hero & i) == 0)
 			return Collections.emptyList();
 		
 		ArrayList<int[]> out = new ArrayList<int[]>();
 
-		int sign = side ? 1 : -1;
+		int sign = turn ? 1 : -1;
 		Piece p = board[l * 8 + n];
+		
+		if (isPromoting(n, l)) {
+			for (int[] d : p.single) {
+				int dN = n + d[0], dL = l + d[1] * sign;
+				
+				if (isValidSpace(p, dN, dL, enemy) &&
+						checkMove(n, l, dN, dL, NORMAL, turn)) {
+					for (int ind = 0; ind <= 4; ind++) {
+						out.add(new int[] {n, l, dN, dL + ind * sign});
+					}
+				}	
+			}
+			
+			for (int[] d : p.attack) {
+				int dN = n + d[0], dL = l + d[1] * sign;
+				
+				if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, turn)) {
+					for (int ind = 0; ind <= 4; ind++) {
+						out.add(new int[] {n, l, dN, dL + ind * sign});
+					}
+				}	
+			}
+			
+			return out;
+		}
 		
 		for (int[] d : p.single) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
 			if (isValidSpace(p, dN, dL, enemy) &&
-					checkMove(n, l, dN, dL, NORMAL, side))
+					checkMove(n, l, dN, dL, NORMAL, turn))
 				out.add(new int[] {n, l, dN, dL});
 		}
 		
@@ -133,26 +158,26 @@ public class Board {
 			long k = 1L << (iN + iL * 8);
 			
 			while ((exists & k) == 0 && 
-					checkMove(n, l, iN, iL, NORMAL, side)) {
+					checkMove(n, l, iN, iL, NORMAL, turn)) {
 				out.add(new int[] {n, l, iN, iL});
 				iN += d[0];
 				iL += d[1] * sign;
 				k = 1L << (iN + iL * 8);
 			}
 			
-			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, NORMAL, side))
+			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, NORMAL, turn))
 				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, side))
+			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, turn))
 				out.add(new int[] {n, l, dN, dL});	
 		}
 		
 		if (p == PAWN) {
-			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, DOUBLE, side))
+			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, DOUBLE, turn))
 				out.add(new int[] {n, l, n, l + 2 * sign});	
 			
 			if (isEnPassant(n, l, n + 1, l + 1 * sign))
@@ -163,10 +188,10 @@ public class Board {
 		}
 		
 		if (p == KING) {
-			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, CASTLE_KING, side)) // castle king
+			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, CASTLE_KING, turn)) // castle king
 				out.add(new int[] {n, l, 6, l});
 			
-			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, CASTLE_QUEEN, side)) // castle queen
+			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, CASTLE_QUEEN, turn)) // castle queen
 				out.add(new int[] {n, l, 2, l});
 		}
 		
@@ -184,6 +209,7 @@ public class Board {
 		
 		var captures = endPoints.stream()
 				.map(a -> new Point(a[2], a[3]))
+				.filter(p -> isValidIndex(p.x, p.y))
 				.filter(p -> {
 					long j = 1L << (p.x + p.y * 8);
 					
@@ -196,6 +222,7 @@ public class Board {
 		
 		var normal = endPoints.stream()
 				.map(a -> new Point(a[2], a[3]))
+				.filter(p -> isValidIndex(p.x, p.y))
 				.filter(p -> !captures.contains(p))
 				.collect(Collectors.toList());
 		
@@ -1089,6 +1116,42 @@ public class Board {
 					out.append(board[l * 8 + n].name().charAt(0) + "w, ");
 				else if ((black & i) != 0)
 					out.append(board[l * 8 + n].name().charAt(0) + "b, ");
+				else
+					out.append("  , ");
+			}
+			
+			out.setCharAt(out.length() - 2, '|');
+			out.setCharAt(out.length() - 1, '\n');
+		}
+		
+		for (int i = 0; i < 8; i++) {
+			out.append("‾‾‾‾");
+		}
+		
+		return out.toString();
+	}
+	
+	public String toUncoloredString() {
+		StringBuilder out = new StringBuilder();
+		
+		for (int i = 0; i < 8; i++) {
+			out.append("  " + i + " ");
+		}
+		
+		out.append("\n");
+		
+		for (int i = 0; i < 8; i++) {
+			out.append("____");
+		}
+		
+		out.append("\n");
+		
+		for (int l = 7; l >= 0; l--) {
+			out.append(l + "|");
+			
+			for (int n = 0; n < 8; n++) {
+				if (board[l * 8 + n] != null)
+					out.append(board[l * 8 + n].name().charAt(0) + " , ");
 				else
 					out.append("  , ");
 			}

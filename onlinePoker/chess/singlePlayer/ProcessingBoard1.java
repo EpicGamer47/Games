@@ -28,7 +28,7 @@ public class ProcessingBoard1 extends Board {
 		this.parent = parent;
 		this.playerSide = playerSide;
 		
-		ai = new AlphaBetaAI(this, 1);
+		ai = new AlphaBetaAI(this, 5);
 		
 		setupProcessing();
 	}

@@ -12,6 +12,8 @@ public class AlphaBetaAI extends AI {
 	private static final Pair posI = new Pair(Double.POSITIVE_INFINITY);
 	private static final Pair negI = new Pair(Double.NEGATIVE_INFINITY);
 	
+	public static int iterations = 0;
+	
 	private static final Ranker r = new MultiRanker(
 			new CoverageRanker(1),
 			new ValueRanker(.7)
@@ -69,6 +71,9 @@ public class AlphaBetaAI extends AI {
 	}
 	
 	private Pair alphaBeta(int depth, Pair aa, Pair bb, boolean turn) {
+		if (++iterations == Integer.highestOneBit(iterations))
+			System.out.println("Reached " + iterations);
+		
 		if (b.movesSinceLastCapture + depth / 2 >= 50) {
 			return new Pair(0);
 		}
@@ -93,8 +98,10 @@ public class AlphaBetaAI extends AI {
 			return value;
 		}
 		
+		var it = moves.iterator();
 		if (turn) {
-			for (var m : moves) {
+			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
+				b.toString();
 				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
 				
 				if (d == null)
@@ -114,13 +121,17 @@ public class AlphaBetaAI extends AI {
 				b.revert(d);
 				
 				if (value.val >= bb.val)
-					return value;
+					break;
 			}
 			
 			return value;
 		}
 		else {
-			for (var m : moves) {
+			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
+				try {
+					b.toString();
+				}
+				
 				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
 				
 				if (d == null)
@@ -133,14 +144,14 @@ public class AlphaBetaAI extends AI {
 							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, true);
+				b.revert(d);
 				p.move = m;
 				
 				value = Pair.min(value, p);
 				bb = Pair.min(bb, value);
-				b.revert(d);
 				
 				if (value.val <= aa.val)
-					return value;
+					break;
 			}
 			
 			return value;
