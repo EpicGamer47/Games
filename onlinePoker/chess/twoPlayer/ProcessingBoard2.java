@@ -250,7 +250,7 @@ public class ProcessingBoard2 extends Board {
 				
 				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
-				boolean hasMoved = move(lastClick.x, lastClick.y, n, l);
+				boolean hasMoved = move(lastClick.x, lastClick.y, n, l) != null;
 				
 				if (hasMoved) {
 					lastClick = null;

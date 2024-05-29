@@ -64,14 +64,14 @@ public class Board {
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
 			board[1 * 8 + i] = Piece.PAWN;
-//			board[6 * 8 + i] = Piece.PAWN;
+			board[6 * 8 + i] = Piece.PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-//		black = 0xFFFF_0000_0000_0000L;
-		black = 0xFF00_0000_0000_0000L;
+		black = 0xFFFF_0000_0000_0000L;
+//		black = 0xFF00_0000_0000_0000L;
 		white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
@@ -236,208 +236,8 @@ public class Board {
 					};			
 	}
 	
-	@Deprecated
-	public boolean move(int n, int l, int dN, int dL) {
-		var move = isValidMove(n, l, dN, dL);
-		
-		if (move == null) {
-			System.out.println(String.format("ILLEGALFAIL %d %d %d %d", n, l, dN, dL));
-			return false;
-		}
-		
-		switch (move) {
-		case PROMOTION_B:
-		case PROMOTION_N:
-		case PROMOTION_Q:
-		case PROMOTION_R:
-			dL = Math.max(0, Math.min(dL, 7));
-			break;
-		default:
-			break;
-		}
-		
-		if (!checkMove(n, l, dN, dL, move, turn)) {
-			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
-			return false;
-		}
-		
-		System.out.println(
-				getAllMoves(n, l).stream()
-					.map(a -> Arrays.toString(a) + ", ")
-					.reduce("", (curr, next) -> curr + next));
-		
-		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
-		long sq1 = 0x7L << (l * 8 + 1);
-		
-		long i = 1L << (n + l * 8);
-		long j = 1L << (dN + dL * 8);
-		
-		if (board[dL * 8 + dN] != null || board[l * 8 + n] == PAWN)
-			movesSinceLastCapture = 0;
-		
-		switch (move) {
-		case DOUBLE:
-		case NORMAL:
-			board[dL * 8 + dN] = board[l * 8 + n];
-			board[l * 8 + n] = null;
-			
-			exists &= ~i;
-			exists |= j;
-			
-			if (turn) {
-				black &= ~j;
-				white &= ~i;
-				white |= j;
-			}
-			else {
-				white &= ~j;
-				black &= ~i;
-				black |= j;
-			}	
-			
-			break;
-		case EN_PASSANT: // not gonna bother with discovered check detection
-			board[dL * 8 + dN] = board[l * 8 + n];
-			board[l * 8 + n] = null;
-			board[l * 8 + dN] = null;
-			
-			long k1 = 1L << (l * 8 + dN); // en-passanted pawn
-			
-			exists &= ~i;
-			exists &= ~k1;
-			exists |= j;
-			
-			if (turn) {
-				black &= ~k1;
-				white &= ~i;
-				white |= j;
-			}
-			else {
-				white &= ~k1;
-				black &= ~i;
-				black |= j;
-			}
-			
-			break;
-		case CASTLE_KING:
-			board[l * 8 + n] = null;
-			board[dL * 8 + dN] = null;
-			board[l * 8 + 6] = KING;
-			board[l * 8 + 5] = ROOK;
-			
-			sk1 = 0b0110L << (l * 8 + 4);
-			long sk2 = 0b1001L << (l * 8 + 4);
-			
-			exists &= ~sk2;
-			exists |= sk1;
-			
-			if (turn) {
-				white &= ~sk2;
-				white |= sk1;
-			}
-			else {
-				black &= ~sk2;
-				black |= sk1;
-			}
-			break;
-		case CASTLE_QUEEN:
-			board[l * 8 + n] = null;
-			board[dL * 8 + dN] = null;
-			board[l * 8 + 2] = KING;
-			board[l * 8 + 3] = ROOK;
-			
-			sq1 = 0b01100L << (l * 8 + 0);
-			long sq2 = 0b10001L << (l * 8 + 0);
-			
-			exists &= ~sq2;
-			exists |= sq1;
-			
-			if (turn) {
-				white &= ~sq2;
-				white |= sq1;
-			}
-			else {
-				black &= ~sq2;
-				black |= sq1;
-			}
-			break;
-		case PROMOTION_B:
-		case PROMOTION_N:
-		case PROMOTION_Q:
-		case PROMOTION_R:
-			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Move.PROMOTION_Q.ordinal()];
-			board[l * 8 + n] = null;
-			
-			exists &= ~i;
-			exists |= j;
-			
-			if (turn) {
-				black &= ~j;
-				white &= ~i;
-				white |= j;
-			}
-			else {
-				white &= ~j;
-				black &= ~i;
-				black |= j;
-			}
-			break;
-		}
-		
-		if (move == DOUBLE)
-			lastDouble = n;
-		else
-			lastDouble = -99;
-		
-		if (board[dL * 8 + dN] == ROOK) {
-			if (turn && l == 0) {
-				if (n == 0)
-					rightToCastleQ_W = false;
-				else if (n == 7)
-					rightToCastleK_W = false;
-			}
-			else if (!turn && l == 7) {
-				if (n == 0)
-					rightToCastleQ_B = false;
-				else if (n == 7)
-					rightToCastleK_B = false;
-			}
-		}
-		
-		if (board[dL * 8 + dN] == KING) {
-			if (turn) {
-				rightToCastleQ_W = false;
-				rightToCastleK_W = false;
-			}
-			else {
-				rightToCastleQ_B = false;
-				rightToCastleK_B = false;
-			}
-		}
-		
-//		long hero = turn ? white : black;
-		
-		long c = coverage(true, white, exists);
-		long c2 = coverage(false, black, exists);
-		
-		System.out.println(String.format("%s %d %d %d %d %b", 
-				move.toString(), n, l, dN, dL, 
-				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
-				(c & findKing(!turn)) == 0)
-				);
-		
-//		if ((c & findKing(!turn)) != 0)
-			System.out.println(toString(c));
-			System.out.println(toString(c2));
-		
-		turn = !turn;
-		movesSinceLastCapture++;
-		
-		return true;
-	}
-	
-	public MoveData forceMove(int n, int l, int dN, int dL) {
-		var out = forceMove(n, l, dN, dL);
+	public MoveData move(int n, int l, int dN, int dL) {
+		var out = move(n, l, dN, dL, turn);
 		
 		if (out != null) {
 			turn = !turn;
@@ -447,7 +247,7 @@ public class Board {
 		return out;
 	}
 	
-	public MoveData forceMove(int n, int l, int dN, int dL, boolean turn) {
+	public MoveData move(int n, int l, int dN, int dL, boolean turn) {
 		var move = isValidMove(n, l, dN, dL, turn);
 		
 		if (move == null) {
@@ -660,6 +460,202 @@ public class Board {
 		return out;
 	}
 	
+	public void forceMove(int n, int l, int dN, int dL, boolean turn) {
+		var move = isValidMove(n, l, dN, dL, turn);
+		
+		switch (move) {
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			dL = Math.max(0, Math.min(dL, 7));
+			break;
+		default:
+			break;
+		}
+		
+		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
+		long sq1 = 0x7L << (l * 8 + 1);
+		
+		long i = 1L << (n + l * 8);
+		long j = 1L << (dN + dL * 8);
+		
+		MoveData out = new MoveData();
+
+		Position from = new Position(n, l);
+		Position to = new Position(dN, dL);
+		
+		if (board[dL * 8 + dN] != null || board[l * 8 + n] == PAWN)
+			movesSinceLastCapture = 0;
+		
+		switch (move) {
+		case DOUBLE:
+		case NORMAL:
+			out.p = new Position[] {from, to};
+			
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}	
+			
+			break;
+		case EN_PASSANT: // not gonna bother with discovered check detection
+			out.p = new Position[] {from, to, new Position(dN, l)};
+			
+			board[dL * 8 + dN] = board[l * 8 + n];
+			board[l * 8 + n] = null;
+			board[l * 8 + dN] = null;
+			
+			long k1 = 1L << (l * 8 + dN); // en-passanted pawn
+			
+			exists &= ~i;
+			exists &= ~k1;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~k1;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~k1;
+				black &= ~i;
+				black |= j;
+			}
+			
+			break;
+		case CASTLE_KING:
+			out.p = new Position[] {from, to, new Position(5, l), new Position(6, l)};
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 6] = KING;
+			board[l * 8 + 5] = ROOK;
+			
+			sk1 = 0b0110L << (l * 8 + 4);
+			long sk2 = 0b1001L << (l * 8 + 4);
+			
+			exists &= ~sk2;
+			exists |= sk1;
+			
+			if (turn) {
+				white &= ~sk2;
+				white |= sk1;
+			}
+			else {
+				black &= ~sk2;
+				black |= sk1;
+			}
+			break;
+		case CASTLE_QUEEN:
+			out.p = new Position[] {from, to, new Position(2, l), new Position(3, l)};
+			
+			board[l * 8 + n] = null;
+			board[dL * 8 + dN] = null;
+			board[l * 8 + 2] = KING;
+			board[l * 8 + 3] = ROOK;
+			
+			sq1 = 0b01100L << (l * 8 + 0);
+			long sq2 = 0b10001L << (l * 8 + 0);
+			
+			exists &= ~sq2;
+			exists |= sq1;
+			
+			if (turn) {
+				white &= ~sq2;
+				white |= sq1;
+			}
+			else {
+				black &= ~sq2;
+				black |= sq1;
+			}
+			break;
+		case PROMOTION_B:
+		case PROMOTION_N:
+		case PROMOTION_Q:
+		case PROMOTION_R:
+			out.p = new Position[] {from, to};
+			
+			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Move.PROMOTION_Q.ordinal()];
+			board[l * 8 + n] = null;
+			
+			exists &= ~i;
+			exists |= j;
+			
+			if (turn) {
+				black &= ~j;
+				white &= ~i;
+				white |= j;
+			}
+			else {
+				white &= ~j;
+				black &= ~i;
+				black |= j;
+			}
+			break;
+		}
+		
+		if (move == DOUBLE)
+			lastDouble = n;
+		else
+			lastDouble = -99;
+		
+		if (board[dL * 8 + dN] == ROOK) {
+			if (turn && l == 0) {
+				if (n == 0)
+					rightToCastleQ_W = false;
+				else if (n == 7)
+					rightToCastleK_W = false;
+			}
+			else if (!turn && l == 7) {
+				if (n == 0)
+					rightToCastleQ_B = false;
+				else if (n == 7)
+					rightToCastleK_B = false;
+			}
+		}
+		
+		if (board[dL * 8 + dN] == KING) {
+			if (turn) {
+				rightToCastleQ_W = false;
+				rightToCastleK_W = false;
+			}
+			else {
+				rightToCastleQ_B = false;
+				rightToCastleK_B = false;
+			}
+		}
+		
+//		long hero = turn ? white : black;
+		
+//		long c = coverage(true, white, exists);
+//		long c2 = coverage(false, black, exists);
+		
+//		System.out.println(String.format("%s %d %d %d %d %b", 
+//				move.toString(), n, l, dN, dL, 
+//				//String.format("%64s", Long.toBinaryString((c & findKing(!turn)))).replace(' ', '0')
+//				(c & findKing(!turn)) == 0)
+//				);
+		
+////		if ((c & findKing(!turn)) != 0)
+//			System.out.println(toString(c));
+//			System.out.println(toString(c2));
+		
+		lastMoves.add(out);
+	}
+	
 	public class Position {
 		public Position() { }
 		
@@ -719,6 +715,7 @@ public class Board {
 		}
 	}
 
+	
 	public boolean checkMove(int n, int l, int dN, int dL, Move move, boolean turn) {
 		if (!isValidIndex(dN, dL)) {
 			return false;
@@ -728,6 +725,7 @@ public class Board {
 		
 		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
 		long sq1 = 0x7L << (l * 8 + 1);
+		Piece p = board[n + l * 8];
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
 		long king = findKing(turn);
@@ -735,42 +733,23 @@ public class Board {
 		long exists = this.exists;
 		
 		switch (move) {
-		case PROMOTION_B:
-		case PROMOTION_N:
-		case PROMOTION_Q:
-		case PROMOTION_R:
-		case DOUBLE:
-		case NORMAL:
-			if (board[l * 8 + n] == KING)
-				return (c & j) == 0;
-			
-			var temp = board[dL * 8 + dN];
-			board[dL * 8 + dN] = board[l * 8 + n];
-			board[l * 8 + n] = null;
-			
-			enemy &= ~j;
-			exists &= ~i;
-			exists |= j;
-			
-			c = coverage(!turn, enemy, exists);
-			
-			board[l * 8 + n] = board[dL * 8 + dN];
-			board[dL * 8 + dN] = temp;
-			
-			if ((c & king) != 0) {
-				return false;
-			}
-			
-			return true;
-		case EN_PASSANT: // not gonna bother with discovered check detection
-			return true;
 		case CASTLE_KING:
 			return (c & sk1) == 0;
 		case CASTLE_QUEEN:
 			return (c & sq1) == 0;
+		default:
+			if ((p != KING && (c & king) == 0) || (p == KING && (c & j) == 0))
+				return true;
+			
+			forceMove(n, l, dN, dL, turn);
+			
+			king = findKing(turn);
+			c = coverage(!turn, enemy, exists);
+			
+			revert();
+			
+			return (c & king) == 0;
 		}
-		
-		throw new IllegalStateException("how did this even get here");
 	}
 	
 	public Move isValidMove(int n, int l, int dN, int dL) {
@@ -1102,7 +1081,7 @@ public class Board {
 			}
 		}
 		
-		throw new IllegalStateException("Each color should always have a king on the board\nBoard:" + toString());
+		return 0xFFFF_FFFF_FFFF_FFFFL;
 	}
 
 	public boolean isGameOver() {

@@ -28,7 +28,7 @@ public class ProcessingBoard1 extends Board {
 		this.parent = parent;
 		this.playerSide = playerSide;
 		
-		ai = new AlphaBetaAI(this, 3);
+		ai = new AlphaBetaAI(this, 5);
 		
 		setupProcessing();
 	}
@@ -248,7 +248,7 @@ public class ProcessingBoard1 extends Board {
 				
 				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
-				boolean hasMoved = forceMove(lastClick.x, lastClick.y, n, l, turn) != null;
+				boolean hasMoved = move(lastClick.x, lastClick.y, n, l) != null;
 				
 				if (hasMoved) {
 					lastClick = null;

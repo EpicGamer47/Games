@@ -17,7 +17,7 @@ public class AlphaBetaAI extends AI {
 	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-//			new CoverageRanker2(1),
+			new CoverageRanker2(1),
 			new ValueRanker(1)
 			);
 	private int depth;
@@ -121,7 +121,7 @@ public class AlphaBetaAI extends AI {
 					throw new RuntimeException(Arrays.toString(it.previous()));
 				}
 				
-				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
+				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 				if (d == null)
 					throw new RuntimeException(Arrays.toString(m) + "\n" + 
@@ -157,7 +157,7 @@ public class AlphaBetaAI extends AI {
 					throw new RuntimeException(Arrays.toString(it.previous()));
 				}
 				
-				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
+				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 				if (d == null)
 					throw new RuntimeException(Arrays.toString(m) + "\n" + 
