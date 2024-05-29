@@ -26,9 +26,9 @@ public class ValueRanker implements Ranker {
 		
 		vals.put(PAWN, 10.0);
 		vals.put(KNIGHT, 30.0);
-		vals.put(BISHOP, 30.0);
+		vals.put(BISHOP, 35.0);
 		vals.put(ROOK, 50.0);
-		vals.put(QUEEN, 90.0);
+		vals.put(QUEEN, 95.0);
 		vals.put(KING, 1000.0);
 	}
 	

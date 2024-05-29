@@ -28,7 +28,7 @@ public class ProcessingBoard1 extends Board {
 		this.parent = parent;
 		this.playerSide = playerSide;
 		
-		ai = new AlphaBetaAI(this, 5);
+		ai = new AlphaBetaAI(this, 3);
 		
 		setupProcessing();
 	}
@@ -197,12 +197,15 @@ public class ProcessingBoard1 extends Board {
 			parent.fill(0xbbe5f53d);
 			parent.rect(x1, y1, width, width);
 		}
-		
-		if (lastMove != null && 
-				((lastMove[0] == n && lastMove[1] == l) || 
-						(lastMove[2] == n && lastMove[3] == l))) {
-			parent.fill(0x88ecf76e);
-			parent.rect(x1, y1, width, width);
+
+		if (!lastMoves.isEmpty()) {
+			var m = lastMoves.peek().p;
+			
+			if ((m[0].n == n && m[0].l == l) || 
+						(m[1].n == n && m[1].l == l)) {
+				parent.fill(0x88ecf76e);
+				parent.rect(x1, y1, width, width);
+			}
 		}
 		
 		long i = 1L << (l * 8 + n);
@@ -245,7 +248,7 @@ public class ProcessingBoard1 extends Board {
 				
 				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
-				boolean hasMoved = move(lastClick.x, lastClick.y, n, l);
+				boolean hasMoved = forceMove(lastClick.x, lastClick.y, n, l, turn) != null;
 				
 				if (hasMoved) {
 					lastClick = null;
@@ -258,6 +261,15 @@ public class ProcessingBoard1 extends Board {
 				}
 			}
 		}
+	}
+	
+	public boolean undo() {
+		if (lastMoves.isEmpty())
+			return false;
+		
+		revert();
+		
+		return true;
 	}
 	
 	private boolean isPromotionIndex(int n, int l) {

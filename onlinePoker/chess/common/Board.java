@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 public class Board {
@@ -32,12 +33,14 @@ public class Board {
 	public boolean rightToCastleQ_B;
 	public int lastDouble;
 	public int movesSinceLastCapture;
-	public int[] lastMove;
+	public Stack<MoveData> lastMoves;
 	
 	public Board() {
+		lastMoves = new Stack<MoveData>();
 		reset();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Board(Board b) {
 		board = b.board.clone();
 		white = b.white;
@@ -52,7 +55,7 @@ public class Board {
 		
 		lastDouble = b.lastDouble;
 		movesSinceLastCapture = b.movesSinceLastCapture;
-		lastMove = b.lastMove;
+		lastMoves = (Stack<MoveData>) b.lastMoves.clone();
 	}
 
 	private void reset() {
@@ -61,13 +64,14 @@ public class Board {
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
 			board[1 * 8 + i] = Piece.PAWN;
-			board[6 * 8 + i] = Piece.PAWN;
+//			board[6 * 8 + i] = Piece.PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-		black = 0xFFFF_0000_0000_0000L;
+//		black = 0xFFFF_0000_0000_0000L;
+		black = 0xFF00_0000_0000_0000L;
 		white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
@@ -82,9 +86,9 @@ public class Board {
 		rightToCastleQ_W = true;
 		rightToCastleK_B = true;
 		rightToCastleQ_B = true;
-		lastDouble = -1;
+		lastDouble = -99;
 		movesSinceLastCapture = 0;
-		lastMove = null;
+		lastMoves.clear();
 	}
 	
 	public List<int[]> getAllMoves(boolean turn) {
@@ -232,6 +236,7 @@ public class Board {
 					};			
 	}
 	
+	@Deprecated
 	public boolean move(int n, int l, int dN, int dL) {
 		var move = isValidMove(n, l, dN, dL);
 		
@@ -382,7 +387,7 @@ public class Board {
 		if (move == DOUBLE)
 			lastDouble = n;
 		else
-			lastDouble = -1;
+			lastDouble = -99;
 		
 		if (board[dL * 8 + dN] == ROOK) {
 			if (turn && l == 0) {
@@ -427,9 +432,19 @@ public class Board {
 		
 		turn = !turn;
 		movesSinceLastCapture++;
-		lastMove = new int[] {n, l, dN, dL};
-
+		
 		return true;
+	}
+	
+	public MoveData forceMove(int n, int l, int dN, int dL) {
+		var out = forceMove(n, l, dN, dL);
+		
+		if (out != null) {
+			turn = !turn;
+			movesSinceLastCapture++;
+		}
+		
+		return out;
 	}
 	
 	public MoveData forceMove(int n, int l, int dN, int dL, boolean turn) {
@@ -499,7 +514,7 @@ public class Board {
 			
 			break;
 		case EN_PASSANT: // not gonna bother with discovered check detection
-			out.p = new Position[] {from, to, new Position(dN, dL)};
+			out.p = new Position[] {from, to, new Position(dN, l)};
 			
 			board[dL * 8 + dN] = board[l * 8 + n];
 			board[l * 8 + n] = null;
@@ -597,7 +612,7 @@ public class Board {
 		if (move == DOUBLE)
 			lastDouble = n;
 		else
-			lastDouble = -1;
+			lastDouble = -99;
 		
 		if (board[dL * 8 + dN] == ROOK) {
 			if (turn && l == 0) {
@@ -639,6 +654,8 @@ public class Board {
 ////		if ((c & findKing(!turn)) != 0)
 //			System.out.println(toString(c));
 //			System.out.println(toString(c2));
+		
+		lastMoves.add(out);
 
 		return out;
 	}
@@ -658,8 +675,8 @@ public class Board {
 			this.p = p;
 		}
 
-		int n, l;
-		Piece p;
+		public int n, l;
+		public Piece p;
 	}
 	
 	public class MoveData {
@@ -681,9 +698,11 @@ public class Board {
 		int d;
 	}
 	
-	public void revert(MoveData md) {
-		if (md == null)
+	public void revert() {
+		if (lastMoves.empty())
 			return;
+		
+		var md = lastMoves.pop();
 		
 		white = md.white;
 		black = md.black;

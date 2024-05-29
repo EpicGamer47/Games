@@ -9,8 +9,19 @@ public class MultiRanker implements Ranker {
 	}
 	
 	@Override
+	public double rank(Board b) {
+		double out = 0;
+		
+		for (var r : rankers) {
+			out += r.rank(b);
+		}
+		
+		return out;
+	}
+	
+	@Override
 	public double rank(Board b, int n, int l) {
-		int out = 0;
+		double out = 0;
 		
 		for (var r : rankers) {
 			out += r.rank(b, n, l);

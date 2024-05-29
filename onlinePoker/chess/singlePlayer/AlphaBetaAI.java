@@ -1,6 +1,7 @@
 package singlePlayer;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import common.AI;
@@ -13,10 +14,11 @@ public class AlphaBetaAI extends AI {
 	private static final Pair negI = new Pair(Double.NEGATIVE_INFINITY);
 	
 	public static int iterations = 0;
+	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-			new CoverageRanker(1),
-			new ValueRanker(.7)
+//			new CoverageRanker2(1),
+			new ValueRanker(1)
 			);
 	private int depth;
 	
@@ -36,18 +38,24 @@ public class AlphaBetaAI extends AI {
 		b = new Board(b);
 		var move = alphaBeta(depth, negI, posI, b.turn);
 		b = old;
+		// calc all on new board to keep drawing alive
 		
-		System.out.println(move.val);
+		System.out.println("eval: " + move.val + ", iter: " + iterations);
+		int sign = b.turn ? 1 : -1;
+		pairs.sort((o, p) -> sign * Double.compare(o.val, p.val));
+		System.out.println(pairs);
+		pairs.clear();
+		iterations = 0;
 		
 		if (move.move == null)
 			return false;
-		
 		
 		b.move(move.move[0], move.move[1], move.move[2], move.move[3]);
 		
 		return true;
 	}
 	
+	@SuppressWarnings("unused")
 	private static class Pair {
 		double val;
 		int[] move;
@@ -67,6 +75,11 @@ public class AlphaBetaAI extends AI {
 		
 		public static Pair min(Pair a, Pair b) {
 			return a.val < b.val ? a : b;
+		}
+		
+		@Override
+		public String toString() {
+			return "(" + val + ", " + Arrays.toString(move) + ")";
 		}
 	}
 	
@@ -98,10 +111,16 @@ public class AlphaBetaAI extends AI {
 			return value;
 		}
 		
-		var it = moves.iterator();
+		var it = moves.listIterator();
 		if (turn) {
 			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
-				b.toString();
+				try {
+					b.toString();
+				}
+				catch (Exception e) {
+					throw new RuntimeException(Arrays.toString(it.previous()));
+				}
+				
 				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
 				
 				if (d == null)
@@ -114,11 +133,14 @@ public class AlphaBetaAI extends AI {
 							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, false);
+				b.revert();
 				p.move = m;
+				
+				if (this.depth == depth)
+					pairs.add(p);
 				
 				value = Pair.max(value, p);
 				aa = Pair.max(aa, value);
-				b.revert(d);
 				
 				if (value.val >= bb.val)
 					break;
@@ -130,6 +152,9 @@ public class AlphaBetaAI extends AI {
 			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
 				try {
 					b.toString();
+				}
+				catch (Exception e) {
+					throw new RuntimeException(Arrays.toString(it.previous()));
 				}
 				
 				var d = b.forceMove(m[0], m[1], m[2], m[3], turn);
@@ -144,8 +169,11 @@ public class AlphaBetaAI extends AI {
 							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, true);
-				b.revert(d);
+				b.revert();
 				p.move = m;
+				
+				if (this.depth == depth)
+					pairs.add(p);
 				
 				value = Pair.min(value, p);
 				bb = Pair.min(bb, value);

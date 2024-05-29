@@ -19,7 +19,7 @@ public class MainAI extends PApplet {
 
 	@Override
 	public void setup() {
-		b = new ProcessingBoard1(this, true);
+		b = new ProcessingBoard1(this, false);
 		frameRate(30);
 		rectMode(CORNER);
 	}
@@ -36,6 +36,7 @@ public class MainAI extends PApplet {
 	
 	@Override
 	public void keyPressed() {
-
+		if (key == 'u')
+			b.undo();
 	}
 }

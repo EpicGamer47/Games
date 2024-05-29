@@ -47,6 +47,7 @@ public class MainTwoPlayer extends PApplet {
 	
 	@Override
 	public void keyPressed() {
-
+		if (key == 'u')
+			b.undo();
 	}
 }
