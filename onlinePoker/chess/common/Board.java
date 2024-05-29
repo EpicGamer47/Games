@@ -766,16 +766,14 @@ public class Board {
 			return false;
 		}
 		
-		long enemy = turn ? black : white;
-		
 		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
 		long sq1 = 0x7L << (l * 8 + 1);
 		Piece p = board[n + l * 8];
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
 		long king = findKing(turn);
+		long enemy = turn ? black : white;
 		long c = coverage(!turn, enemy, exists);
-		long exists = this.exists;
 		
 		switch (move) {
 		case CASTLE_KING:
@@ -783,11 +781,12 @@ public class Board {
 		case CASTLE_QUEEN:
 			return (c & sq1) == 0;
 		default:
-			if ((p != KING && (c & king) == 0) || (p == KING && (c & j) == 0))
+			if ((p == KING && (c & j) == 0))
 				return true;
 			
 			forceMove(n, l, dN, dL, turn);
 			
+			enemy = turn ? black : white;
 			king = findKing(turn);
 			c = coverage(!turn, enemy, exists);
 			
@@ -810,7 +809,7 @@ public class Board {
 		long side = ((white & i) != 0) ? 1 : -1;
 		
 		if (p == PAWN && isPromoting(n, l) && !(isValidIndex(dN, dL))) {
-			return isValidPromotionMove(n, l, dN, dL);
+			return isValidPromotionMove(n, l, dN, dL, turn);
 		}
 	
 		if (!isValidIndex(dN, dL))
@@ -871,18 +870,18 @@ public class Board {
 		return null;
 	}
 
-	private Move isValidPromotionMove(int n, int l, int dN, int dL) {
+	private Move isValidPromotionMove(int n, int l, int dN, int dL, boolean turn) {
 		long i = 1L << (l * 8 + n);
-		long side = ((white & i) != 0) ? 1 : -1;
+		long side = turn ? 1 : -1;
 		
 		int pI = dL - 7 - 1;
 		
-		if ((black & i) != 0)
+		if (!turn)
 			pI = 0 - dL - 1;
 		
 		dL -= (pI + 1) * side;
 		
-		var check = isValidMove(n, l, dN, dL);
+		var check = isValidMove(n, l, dN, dL, turn);
 		
 		if (check == null) {
 			return null;

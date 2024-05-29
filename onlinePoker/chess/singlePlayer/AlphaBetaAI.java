@@ -17,9 +17,14 @@ public class AlphaBetaAI extends AI {
 	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-			new CoverageRanker2(1),
-			new ValueRanker(1)
+			new CoverageRanker(2),
+			new ValueRanker(1.5)
 			);
+//	private static final Ranker r = new MultiRanker(
+//			new CoverageRanker(1),
+//			new CoverageRanker(.5),
+//			new ValueRanker(1.5)
+//			);
 	private int depth;
 	
 	public AlphaBetaAI(Board b) {
@@ -41,8 +46,8 @@ public class AlphaBetaAI extends AI {
 		// calc all on new board to keep drawing alive
 		
 		System.out.println("eval: " + move.val + ", iter: " + iterations);
-		int sign = b.turn ? 1 : -1;
-		pairs.sort((o, p) -> sign * Double.compare(o.val, p.val));
+		int esign = b.turn ? -1 : 1;
+		pairs.sort((o, p) -> esign * Double.compare(o.val, p.val));
 		System.out.println(pairs);
 		pairs.clear();
 		iterations = 0;
@@ -50,9 +55,7 @@ public class AlphaBetaAI extends AI {
 		if (move.move == null)
 			return false;
 		
-		b.move(move.move[0], move.move[1], move.move[2], move.move[3]);
-		
-		return true;
+		return b.move(move.move[0], move.move[1], move.move[2], move.move[3]) != null;
 	}
 	
 	@SuppressWarnings("unused")
