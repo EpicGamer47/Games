@@ -7,6 +7,8 @@ import common.Board;
 import common.Piece;
 import common.Ranker;
 
+// this causes so many problems
+@Deprecated
 public class CoverageRanker2 implements Ranker {
 	double mult;
 	

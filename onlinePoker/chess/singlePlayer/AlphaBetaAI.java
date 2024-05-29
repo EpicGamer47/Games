@@ -17,10 +17,14 @@ public class AlphaBetaAI extends AI {
 	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-			new CoverageRanker2(1),
-			new CoverageRanker(.5),
+			new CoverageRanker(2),
 			new ValueRanker(1.5)
 			);
+//	private static final Ranker r = new MultiRanker(
+//			new CoverageRanker(1),
+//			new CoverageRanker(.5),
+//			new ValueRanker(1.5)
+//			);
 	private int depth;
 	
 	public AlphaBetaAI(Board b) {
