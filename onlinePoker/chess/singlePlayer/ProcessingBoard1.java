@@ -272,6 +272,15 @@ public class ProcessingBoard1 extends Board {
 		return true;
 	}
 	
+	public boolean redo() {
+		if (futureMoves.isEmpty())
+			return false;
+		
+		restore();
+		
+		return true;
+	}
+	
 	private boolean isPromotionIndex(int n, int l) {
 		return n == 8 && l >= 2 && l <= 5;
 	}

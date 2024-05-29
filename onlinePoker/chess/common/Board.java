@@ -33,7 +33,9 @@ public class Board {
 	public boolean rightToCastleQ_B;
 	public int lastDouble;
 	public int movesSinceLastCapture;
+	public int moveCount;
 	public Stack<MoveData> lastMoves;
+	public Stack<MoveData> futureMoves;
 	
 	public Board() {
 		lastMoves = new Stack<MoveData>();
@@ -55,6 +57,7 @@ public class Board {
 		
 		lastDouble = b.lastDouble;
 		movesSinceLastCapture = b.movesSinceLastCapture;
+		moveCount = b.moveCount;
 		lastMoves = (Stack<MoveData>) b.lastMoves.clone();
 	}
 
@@ -87,6 +90,7 @@ public class Board {
 		rightToCastleK_B = true;
 		rightToCastleQ_B = true;
 		lastDouble = -99;
+		moveCount = 0;
 		movesSinceLastCapture = 0;
 		lastMoves.clear();
 	}
@@ -456,6 +460,8 @@ public class Board {
 //			System.out.println(toString(c2));
 		
 		lastMoves.add(out);
+		futureMoves.clear();
+		moveCount++;
 
 		return out;
 	}
@@ -654,6 +660,8 @@ public class Board {
 //			System.out.println(toString(c2));
 		
 		lastMoves.add(out);
+		futureMoves.clear();
+		moveCount++;
 	}
 	
 	public class Position {
@@ -687,11 +695,19 @@ public class Board {
 			d = Board.this.lastDouble;
 		}
 		
+		public MoveData(MoveData md) {
+			this();
+			p = new Position[md.p.length];
+			
+			for (int i = 0; i < p.length; i++) {
+				p[i] = new Position(md.p[i].n, md.p[i].l);
+			}
+		}
+
 		public long white, black, exists;
-		public Move move;
 		public Position[] p;
 		boolean cKW, cQW, cKB, cQB;
-		int d;
+		public int d;
 	}
 	
 	public void revert() {
@@ -699,6 +715,7 @@ public class Board {
 			return;
 		
 		var md = lastMoves.pop();
+		var current = new MoveData(md);
 		
 		white = md.white;
 		black = md.black;
@@ -713,6 +730,34 @@ public class Board {
 		for (var pos : md.p) {
 			board[pos.n + pos.l * 8] = pos.p;
 		}
+		moveCount--;
+		
+		futureMoves.add(current);
+	}
+	
+	public void restore() {
+		if (futureMoves.empty())
+			return;
+		
+		var md = futureMoves.pop();
+		var current = new MoveData(md);
+		
+		white = md.white;
+		black = md.black;
+		exists = md.exists;
+		
+		rightToCastleK_W = md.cKW;
+		rightToCastleQ_W = md.cQW;
+		rightToCastleK_B = md.cKB;
+		rightToCastleQ_B = md.cQB;
+		lastDouble = md.d;
+		moveCount++;
+		
+		for (var pos : md.p) {
+			board[pos.n + pos.l * 8] = pos.p;
+		}
+		
+		futureMoves.add(current);
 	}
 
 	
@@ -858,10 +903,8 @@ public class Board {
 	}
 
 	/*
-	 * expanded bc this is so unreadable
-	 * implies king and rook are on starting squares,
-	 * if the board has the right to castle.
-	 * note: check for correct rook
+	 * implies king and rook are on starting squares
+	 * check for correct rook
 	 */
 	public boolean isCastleKing(int n, int l, int dN, int dL) {
 		if (turn) {
