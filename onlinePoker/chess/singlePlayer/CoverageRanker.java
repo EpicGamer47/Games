@@ -27,7 +27,7 @@ public class CoverageRanker implements Ranker {
 		vals.put(KNIGHT, 1.3);
 		vals.put(BISHOP, .9);
 		vals.put(ROOK, 1.0);
-		vals.put(QUEEN, .75);
+		vals.put(QUEEN, .85);
 		vals.put(KING, 0.0);
 	}
 	

@@ -49,10 +49,6 @@ public class ProcessingBoard1 extends Board {
 				drawPromotion(800);
 //		}
 		
-		if (turn != playerSide) {
-			ai.makeAMove();
-		}
-		
 		drawBackground();
 		
 		for (int l = 0; l < 8; l++) {
@@ -72,6 +68,10 @@ public class ProcessingBoard1 extends Board {
 		
 		if (isGameOver())
 			gameOver();
+		
+		if (turn != playerSide) {
+			ai.makeAMove();
+		}
 	}
 	
 	private void drawBackground() {
