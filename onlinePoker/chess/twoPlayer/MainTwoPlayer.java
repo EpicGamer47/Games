@@ -35,7 +35,7 @@ public class MainTwoPlayer extends PApplet {
 		fill(0xFF333333);
 		rect(width - 100 - w * 9, 100 - w, w * 10, w * 10);
 		fill(0xFFCCCCCC);
-		rect(100 - w, 100- w, w * 10, w * 10);
+		rect(100 - w, 100 - w, w * 10, w * 10);
 		
 		b.draw();
 	}
@@ -49,5 +49,7 @@ public class MainTwoPlayer extends PApplet {
 	public void keyPressed() {
 		if (key == 'u')
 			b.undo();
+		else if (key == 'r')
+			b.redo();
 	}
 }

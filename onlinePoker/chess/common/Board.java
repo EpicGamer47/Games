@@ -39,6 +39,7 @@ public class Board {
 	
 	public Board() {
 		lastMoves = new Stack<MoveData>();
+		futureMoves = new Stack<MoveData>();
 		reset();
 	}
 	
@@ -59,6 +60,7 @@ public class Board {
 		movesSinceLastCapture = b.movesSinceLastCapture;
 		moveCount = b.moveCount;
 		lastMoves = (Stack<MoveData>) b.lastMoves.clone();
+		futureMoves = (Stack<MoveData>) b.futureMoves.clone();
 	}
 
 	private void reset() {
@@ -93,6 +95,7 @@ public class Board {
 		moveCount = 0;
 		movesSinceLastCapture = 0;
 		lastMoves.clear();
+		futureMoves.clear();
 	}
 	
 	public List<int[]> getAllMoves(boolean turn) {
@@ -660,7 +663,7 @@ public class Board {
 //			System.out.println(toString(c2));
 		
 		lastMoves.add(out);
-		futureMoves.clear();
+//		futureMoves.clear();
 		moveCount++;
 	}
 	
@@ -735,6 +738,28 @@ public class Board {
 		futureMoves.add(current);
 	}
 	
+	public void noPushRevert() {
+		if (lastMoves.empty())
+			return;
+		
+		var md = lastMoves.pop();
+		
+		white = md.white;
+		black = md.black;
+		exists = md.exists;
+		
+		rightToCastleK_W = md.cKW;
+		rightToCastleQ_W = md.cQW;
+		rightToCastleK_B = md.cKB;
+		rightToCastleQ_B = md.cQB;
+		lastDouble = md.d;
+		
+		for (var pos : md.p) {
+			board[pos.n + pos.l * 8] = pos.p;
+		}
+		moveCount--;
+	}
+	
 	public void restore() {
 		if (futureMoves.empty())
 			return;
@@ -757,7 +782,7 @@ public class Board {
 			board[pos.n + pos.l * 8] = pos.p;
 		}
 		
-		futureMoves.add(current);
+		lastMoves.add(current);
 	}
 
 	
@@ -790,7 +815,7 @@ public class Board {
 			king = findKing(turn);
 			c = coverage(!turn, enemy, exists);
 			
-			revert();
+			noPushRevert();
 			
 			return (c & king) == 0;
 		}

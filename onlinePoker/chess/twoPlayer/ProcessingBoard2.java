@@ -270,6 +270,17 @@ public class ProcessingBoard2 extends Board {
 			return false;
 		
 		revert();
+		turn = !turn;
+		
+		return true;
+	}
+	
+	public boolean redo() {
+		if (futureMoves.isEmpty())
+			return false;
+		
+		restore();
+		turn = !turn;
 		
 		return true;
 	}

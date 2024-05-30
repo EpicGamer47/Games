@@ -136,7 +136,7 @@ public class AlphaBetaAI extends AI {
 							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, false);
-				b.revert();
+				b.noPushRevert();
 				p.move = m;
 				
 				if (this.depth == depth)
@@ -172,7 +172,7 @@ public class AlphaBetaAI extends AI {
 							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, true);
-				b.revert();
+				b.noPushRevert();
 				p.move = m;
 				
 				if (this.depth == depth)

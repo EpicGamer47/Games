@@ -38,5 +38,7 @@ public class MainAI extends PApplet {
 	public void keyPressed() {
 		if (key == 'u')
 			b.undo();
+		else if (key == 'r')
+			b.restore();
 	}
 }
