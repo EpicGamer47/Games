@@ -794,30 +794,25 @@ public class Board {
 		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
 		long sq1 = 0x7L << (l * 8 + 1);
 		Piece p = board[n + l * 8];
-		long i = 1L << (n + l * 8);
-		long j = 1L << (dN + dL * 8);
-		long king = findKing(turn);
 		long enemy = turn ? black : white;
-		long c = coverage(!turn, enemy, exists);
+		long c;
 		
 		switch (move) {
 		case CASTLE_KING:
+			c = coverage(!turn, enemy, exists);
 			return (c & sk1) == 0;
 		case CASTLE_QUEEN:
+			c = coverage(!turn, enemy, exists);
 			return (c & sq1) == 0;
 		default:
-			if ((p == KING && (c & j) == 0))
+			if (p == KING && !isBeingAttacked(dN, dL, turn))
 				return true;
 			
 			forceMove(n, l, dN, dL, turn);
-			
-			enemy = turn ? black : white;
-			king = findKing(turn);
-			c = coverage(!turn, enemy, exists);
-			
+			boolean out = !isInCheck(turn);
 			noPushRevert();
 			
-			return (c & king) == 0;
+			return out;
 		}
 	}
 	
@@ -1042,7 +1037,7 @@ public class Board {
 	}
 	
 	public long coverage(long i) {
-		int k = Long.numberOfTrailingZeros(i) + 1;
+		int k = Long.numberOfTrailingZeros(i);
 		int n = k % 8, l = k / 8;
 		boolean side = (white & i) != 0;
 		
@@ -1153,6 +1148,55 @@ public class Board {
 
 	public boolean isGameOver() {
 		return getAllMoves(turn).isEmpty() || movesSinceLastCapture >= 50;
+	}
+	
+	// does NOT confirm if the square is attack due to en passant
+	public boolean isBeingAttacked(int n, int l, boolean turn) {
+		long enemy = turn ? black : white;
+		int sign = turn ? 1 : -1;
+		
+		for (int[] d : AllMoves.single) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL) && (enemy & j) != 0 && 
+					board[dN + dL * 8].canMoveAttack && board[dN + dL * 8].hasMove(SINGLE, d))
+				return true;
+		}
+		
+		for (int[] d : AllMoves.repeat) {
+			int iN = n + d[0], iL = l + d[1] * sign;
+			
+			long k = 1L << (iN + iL * 8);
+			
+			while (isValidIndex(iN, iL) && (exists & k) == 0) {
+				iN += d[0];
+				iL += d[1] * sign;
+				k = 1L << (iN + iL * 8);
+			}
+			
+			if (isValidIndex(iN, iL) && (enemy & k) != 0 && board[iN + iL * 8].hasMove(REPEAT, d))
+				return true;
+		}
+		
+		for (int[] d : AllMoves.attack) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			long j = 1L << (dN + dL * 8);
+			
+			if ((enemy & j) != 0 && board[dN + dL * 8].hasMove(ATTACK, d))
+				return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean isInCheck(boolean turn) {
+		int k = Long.numberOfTrailingZeros(findKing(turn));
+		int n = k % 8, l = k / 8;
+		
+		return isBeingAttacked(n, l, turn);
 	}
 
 	//DEBUG

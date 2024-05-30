@@ -12,6 +12,10 @@ public enum Piece {
 	public static final int WHITE = 0;
 	public static final int BLACK = 6;
 	
+	public static final int REPEAT = 0;
+	public static final int SINGLE = 1;
+	public static final int ATTACK = 2;
+	
 	public int[][] repeat;
 	public int[][] single;
 	public int[][] attack; // only supports single
@@ -44,5 +48,30 @@ public enum Piece {
 	
 	public String getPieceFile(int color) {
 		return "/chessSet/" + (color == WHITE ? "w" : "b") + this.toString() + ".svg";
+	}
+	
+	public boolean hasMove(int from, int[] move) {
+		int[][] moves;
+		
+		switch (from) {
+		case REPEAT:
+			moves = repeat;
+			break;
+		case SINGLE:
+			moves = single;
+			break;
+		case ATTACK:
+			moves = attack;
+			break;
+		default:
+			return false;
+		}
+		
+		for (int i = 0; i < moves.length; i++) {
+			if (moves[i][0] == move[0] && moves[i][1] == move[1])
+				return true;
+		}
+		
+		return false;
 	}
 }

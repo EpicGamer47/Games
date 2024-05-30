@@ -249,6 +249,7 @@ public class ProcessingBoard1 extends Board {
 				l += isPromoting(lastClick.x, lastClick.y) ? (side * promotionClick + 1) : 0;
 				
 				boolean hasMoved = move(lastClick.x, lastClick.y, n, l) != null;
+//				System.out.println(isInCheck(turn));
 				
 				if (hasMoved) {
 					lastClick = null;
