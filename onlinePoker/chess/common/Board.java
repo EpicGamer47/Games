@@ -7,8 +7,10 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Stack;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Board {
@@ -69,14 +71,14 @@ public class Board {
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
 			board[1 * 8 + i] = Piece.PAWN;
-			board[6 * 8 + i] = Piece.PAWN;
+//			board[6 * 8 + i] = Piece.PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-		black = 0xFFFF_0000_0000_0000L;
-//		black = 0xFF00_0000_0000_0000L;
+//		black = 0xFFFF_0000_0000_0000L;
+		black = 0xFF00_0000_0000_0000L;
 		white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
@@ -114,6 +116,29 @@ public class Board {
 		long i = 1L << (n + l * 8);
 		
 		return getAllMoves(n, l, (white & i) != 0);
+	}
+	
+	//TODO
+	public List<int[]> sortMoveList(List<int[]> moves) {
+		return moves.stream()
+				.map(m -> new MoveInfo(m))
+//				.sorted((m1, m2) -> m1.move[0] - m2.move[0])
+				.map(m -> m.move)
+				.toList();
+	}
+	
+	private class MoveInfo {
+		int[] move;
+		Piece p;
+		boolean isCapture;
+		
+		MoveInfo(int[] move) {
+			this.move = move;
+			this.p = Board.this.board[move[0] + move[1] * 8];
+			
+			long j = 1L << (move[2] + move[3] * 8);
+			isCapture = (exists & j) != 0;
+		}
 	}
 	
 	public List<int[]> getAllMoves(int n, int l, boolean turn) {
@@ -168,9 +193,10 @@ public class Board {
 			
 			long k = 1L << (iN + iL * 8);
 			
-			while ((exists & k) == 0 && 
-					checkMove(n, l, iN, iL, NORMAL, turn)) {
-				out.add(new int[] {n, l, iN, iL});
+			while ((exists & k) == 0) {
+				if (checkMove(n, l, iN, iL, NORMAL, turn))
+					out.add(new int[] {n, l, iN, iL});
+				
 				iN += d[0];
 				iL += d[1] * sign;
 				k = 1L << (iN + iL * 8);
@@ -471,6 +497,9 @@ public class Board {
 	
 	public void forceMove(int n, int l, int dN, int dL, boolean turn) {
 		var move = isValidMove(n, l, dN, dL, turn);
+		
+		if (move == null)
+			throw new RuntimeException("fuck you");
 		
 		switch (move) {
 		case PROMOTION_B:
@@ -791,23 +820,16 @@ public class Board {
 			return false;
 		}
 		
-		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
-		long sq1 = 0x7L << (l * 8 + 1);
-		Piece p = board[n + l * 8];
-		long enemy = turn ? black : white;
-		long c;
-		
 		switch (move) {
 		case CASTLE_KING:
-			c = coverage(!turn, enemy, exists);
-			return (c & sk1) == 0;
+			return !isBeingAttacked(n, l, turn) && 
+					!isBeingAttacked(5, l, turn) && 
+					!isBeingAttacked(6, l, turn);
 		case CASTLE_QUEEN:
-			c = coverage(!turn, enemy, exists);
-			return (c & sq1) == 0;
+			return !isBeingAttacked(2, l, turn) && 
+					!isBeingAttacked(3, l, turn) && 
+					!isBeingAttacked(n, l, turn);
 		default:
-			if (p == KING && !isBeingAttacked(dN, dL, turn))
-				return true;
-			
 			forceMove(n, l, dN, dL, turn);
 			boolean out = !isInCheck(turn);
 			noPushRevert();
