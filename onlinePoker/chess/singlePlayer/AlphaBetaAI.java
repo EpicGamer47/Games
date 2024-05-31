@@ -121,23 +121,26 @@ public class AlphaBetaAI extends AI {
 		var it = moves.listIterator();
 		if (turn) {
 			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
-				try {
-					b.toString();
-				}
-				catch (Exception e) {
-					throw new RuntimeException(Arrays.toString(it.previous()));
-				}
+//				try {
+//					b.toString();
+//				}
+//				catch (Exception e) {
+//					throw new RuntimeException(Arrays.toString(it.previous()));
+//				}
 				
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
-				if (d == null)
-					throw new RuntimeException(Arrays.toString(m) + "\n" + 
-							(moves.stream()
-									.map(a -> Arrays.toString(a) + ", ")
-									.reduce("", (curr, next) -> curr + next)) + "\n" + 
-							Board.toString(b.white) + "\n" + 
-							Board.toString(b.black) + "\n" + 
-							b.toString());
+//				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
+//					throw new RuntimeException("fuck you");
+				
+//				if (d == null)
+//					throw new RuntimeException(Arrays.toString(m) + "\n" + 
+//							(moves.stream()
+//									.map(a -> Arrays.toString(a) + ", ")
+//									.reduce("", (curr, next) -> curr + next)) + "\n" + 
+//							Board.toString(b.white) + "\n" + 
+//							Board.toString(b.black) + "\n" + 
+//							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, false);
 				b.noPushRevert();
@@ -157,23 +160,26 @@ public class AlphaBetaAI extends AI {
 		}
 		else {
 			for (var m = moves.get(0); it.hasNext(); m = it.next()) {
-				try {
-					b.toString();
-				}
-				catch (Exception e) {
-					throw new RuntimeException(Arrays.toString(it.previous()));
-				}
+//				try {
+//					b.toString();
+//				}
+//				catch (Exception e) {
+//					throw new RuntimeException(Arrays.toString(it.previous()));
+//				}
 				
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
-				if (d == null)
-					throw new RuntimeException(Arrays.toString(m) + "\n" + 
-							(moves.stream()
-									.map(a -> Arrays.toString(a) + ", ")
-									.reduce("", (curr, next) -> curr + next)) + "\n" + 
-							Board.toString(b.white) + "\n" + 
-							Board.toString(b.black) + "\n" + 
-							b.toString());
+//				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
+//					throw new RuntimeException("fuck you");
+				
+//				if (d == null)
+//					throw new RuntimeException(Arrays.toString(m) + "\n" + 
+//							(moves.stream()
+//									.map(a -> Arrays.toString(a) + ", ")
+//									.reduce("", (curr, next) -> curr + next)) + "\n" + 
+//							Board.toString(b.white) + "\n" + 
+//							Board.toString(b.black) + "\n" + 
+//							b.toString());
 				
 				var p = alphaBeta(depth - 1, aa, bb, true);
 				b.noPushRevert();

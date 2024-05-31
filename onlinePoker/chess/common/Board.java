@@ -69,22 +69,35 @@ public class Board {
 		board = new Piece[8 * 8];
 		
 		for (int i = 0; i < 8; i++) {
-			board[i] = row1[i];
-			board[1 * 8 + i] = Piece.PAWN;
-			board[6 * 8 + i] = Piece.PAWN;
+//			board[i] = row1[i];
+			board[1 * 8 + i] = PAWN;
+			board[6 * 8 + i] = PAWN;
+			board[2 * 8 + i] = PAWN;
+			board[5 * 8 + i] = PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
-			board[7 * 8 + i] = row1[i];
+//			board[7 * 8 + i] = row1[i];
 		}
 		
-		black = 0xFFFF_0000_0000_0000L;
+		board[7 * 8 + 4] = KING;
+		board[0 * 8 + 4] = KING;
+		
+//			black = 0xFFFF_0000_0000_0000L;
 //		black = 0xFF00_0000_0000_0000L;
-		white = 0x0000_0000_0000_FFFFL;
+//			white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
+		
+		white = 0x0000_0000_00FF_FF00L | (1L << 0 * 8 + 4);
+		black = 0x00FF_FF00_0000_0000L | (1L << 7 * 8 + 4);
+		
 		exists = black | white;
 		
 		resetFlags();
+		rightToCastleK_W = false;
+		rightToCastleQ_W = false;
+		rightToCastleK_B = false;
+		rightToCastleQ_B = false;
 	}
 	
 	private void resetFlags() {
@@ -542,19 +555,20 @@ public class Board {
 			board[dL * 8 + dN] = board[l * 8 + n];
 			board[l * 8 + n] = null;
 			
-			exists &= ~i;
-			exists |= j;
-			
 			if (turn) {
 				black &= ~j;
+				black &= ~i;
 				white &= ~i;
 				white |= j;
 			}
 			else {
 				white &= ~j;
+				white &= ~i;
 				black &= ~i;
 				black |= j;
 			}	
+			
+			exists = black | white;
 			
 			break;
 		case EN_PASSANT: // not gonna bother with discovered check detection
@@ -566,10 +580,6 @@ public class Board {
 			
 			long k1 = 1L << (l * 8 + dN); // en-passanted pawn
 			
-			exists &= ~i;
-			exists &= ~k1;
-			exists |= j;
-			
 			if (turn) {
 				black &= ~k1;
 				white &= ~i;
@@ -580,6 +590,8 @@ public class Board {
 				black &= ~i;
 				black |= j;
 			}
+			
+			exists = black | white;
 			
 			break;
 		case CASTLE_KING:
@@ -593,9 +605,6 @@ public class Board {
 			sk1 = 0b0110L << (l * 8 + 4);
 			long sk2 = 0b1001L << (l * 8 + 4);
 			
-			exists &= ~sk2;
-			exists |= sk1;
-			
 			if (turn) {
 				white &= ~sk2;
 				white |= sk1;
@@ -604,6 +613,9 @@ public class Board {
 				black &= ~sk2;
 				black |= sk1;
 			}
+			
+			exists = black | white;
+			
 			break;
 		case CASTLE_QUEEN:
 			out.p = new Position[] {from, to, new Position(2, l), new Position(3, l)};
@@ -616,9 +628,6 @@ public class Board {
 			sq1 = 0b01100L << (l * 8 + 0);
 			long sq2 = 0b10001L << (l * 8 + 0);
 			
-			exists &= ~sq2;
-			exists |= sq1;
-			
 			if (turn) {
 				white &= ~sq2;
 				white |= sq1;
@@ -627,6 +636,9 @@ public class Board {
 				black &= ~sq2;
 				black |= sq1;
 			}
+			
+			exists = black | white;
+			
 			break;
 		case PROMOTION_B:
 		case PROMOTION_N:
@@ -636,9 +648,6 @@ public class Board {
 			
 			board[dL * 8 + dN] = promotionPieces[move.ordinal() - Move.PROMOTION_Q.ordinal()];
 			board[l * 8 + n] = null;
-			
-			exists &= ~i;
-			exists |= j;
 			
 			if (turn) {
 				black &= ~j;
@@ -650,6 +659,9 @@ public class Board {
 				black &= ~i;
 				black |= j;
 			}
+			
+			exists = black | white;
+			
 			break;
 		}
 		
@@ -779,6 +791,9 @@ public class Board {
 		if (lastMoves.empty())
 			return;
 		
+		if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
+			throw new RuntimeException("fuck you1");
+		
 		var md = lastMoves.pop();
 		
 		white = md.white;
@@ -795,6 +810,9 @@ public class Board {
 			board[pos.n + pos.l * 8] = pos.p;
 		}
 		moveCount--;
+		
+		if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
+			throw new RuntimeException("fuck you2");
 	}
 	
 	public void restore() {
@@ -838,8 +856,19 @@ public class Board {
 					!isBeingAttacked(3, l, turn) && 
 					!isBeingAttacked(n, l, turn);
 		default:
+			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
+				throw new RuntimeException("fuck you1");
+			
 			forceMove(n, l, dN, dL, turn);
+			
+			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
+				throw new RuntimeException("fuck you1");
+			
 			boolean out = !isInCheck(turn);
+			
+			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
+				throw new RuntimeException("fuck you1");
+			
 			noPushRevert();
 			
 			return out;
