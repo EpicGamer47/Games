@@ -7,28 +7,15 @@ import common.Board;
 import common.Piece;
 import common.Ranker;
 
-public class CoverageRanker implements Ranker {
+public class CoverageRanker3 implements Ranker {
 	double mult;
 	
-	public CoverageRanker() { 
+	public CoverageRanker3() { 
 		mult = 1;
 	}
 	
-	public CoverageRanker(double mult) {
+	public CoverageRanker3(double mult) {
 		this.mult = mult;
-	}
-	
-	public static EnumMap<Piece, Double> vals;
-	
-	static {
-		vals = new EnumMap<Piece, Double>(Piece.class);
-		
-		vals.put(PAWN, 1.5);
-		vals.put(KNIGHT, 1.3);
-		vals.put(BISHOP, .9);
-		vals.put(ROOK, 1.0);
-		vals.put(QUEEN, .85);
-		vals.put(KING, 0.0);
 	}
 	
 //	public static EnumMap<Piece, Double> maxMoves;
@@ -42,10 +29,11 @@ public class CoverageRanker implements Ranker {
 //		maxMoves.put(KING, 8.0);
 //	}
 
-	// note: using coverage on a king is arguably horrible
+	// quadratic dropoff per covered square
+	// cubic up to 27, the max amount of squares a queen covers
 	@Override
 	public double rank(Board b, int n, int l) {
-		final double standard = 100 / 7.0;
+		final double standard = 10 / 7.0;
 		
 		if (b.board[n + l * 8] == KING || b.board[n + l * 8] == null)
 			return 0;
@@ -54,10 +42,13 @@ public class CoverageRanker implements Ranker {
 		boolean side = (b.white & i) != 0;
 		
 		int c = Long.bitCount(b.coverage(n, l, side));
+		double dxInt = 46.8;
+		
+		double val = -c * (c - dxInt) * (c + dxInt) / (dxInt * dxInt);
 		
 		if ((b.white & i) != 0)
-			return  c * standard * mult * vals.get(b.board[n + l * 8]);
+			return  standard * val;
 		else
-			return -c * standard * mult * vals.get(b.board[n + l * 8]);
+			return -standard * val;
 	}
 }

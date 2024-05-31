@@ -28,7 +28,7 @@ public class ProcessingBoard1 extends Board {
 		this.parent = parent;
 		this.playerSide = playerSide;
 		
-		ai = new AlphaBetaAI(this, 5);
+		ai = new AlphaBetaAI(this, 3);
 		
 		setupProcessing();
 	}
@@ -69,7 +69,7 @@ public class ProcessingBoard1 extends Board {
 		if (isGameOver())
 			gameOver();
 		
-		if (turn != playerSide) {
+		if (turn != playerSide && !isGameOver()) {
 			ai.makeAMove();
 		}
 	}
@@ -95,12 +95,9 @@ public class ProcessingBoard1 extends Board {
 		parent.fill(0xFFFFFFFF);
 		parent.textSize(100);
 		
-		long king = this.findKing(turn);
-		long hero = turn ? white : black;
-		
 		String msg = "50 move rule - draw";
 		
-		if ((hero & king) == 0)
+		if (!isInCheck(turn))
 			msg = "Stalemate";
 		else
 			msg = "Checkmate: " + (turn ? "Black" : "White") + " wins!";

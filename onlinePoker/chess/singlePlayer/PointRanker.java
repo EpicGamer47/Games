@@ -93,7 +93,7 @@ public class PointRanker implements Ranker {
 
 	@Override
 	public double rank(Board b, int n, int l) {
-		final double standard = 10 / 7;
+		final double standard = 1;
 		
 		if (b.board[n + l * 8] == null)
 			return 0;

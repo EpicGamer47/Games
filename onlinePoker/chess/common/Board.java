@@ -71,14 +71,14 @@ public class Board {
 		for (int i = 0; i < 8; i++) {
 			board[i] = row1[i];
 			board[1 * 8 + i] = Piece.PAWN;
-//			board[6 * 8 + i] = Piece.PAWN;
+			board[6 * 8 + i] = Piece.PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
 			board[7 * 8 + i] = row1[i];
 		}
 		
-//		black = 0xFFFF_0000_0000_0000L;
-		black = 0xFF00_0000_0000_0000L;
+		black = 0xFFFF_0000_0000_0000L;
+//		black = 0xFF00_0000_0000_0000L;
 		white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
@@ -109,20 +109,28 @@ public class Board {
 			}
 		}
 		
-		return out;
+		return sortMoveList(out);
+//		return out;
 	}
 	
 	public List<int[]> getAllMoves(int n, int l) {
 		long i = 1L << (n + l * 8);
 		
-		return getAllMoves(n, l, (white & i) != 0);
+		return sortMoveList(getAllMoves(n, l, (white & i) != 0));
 	}
 	
 	//TODO
 	public List<int[]> sortMoveList(List<int[]> moves) {
 		return moves.stream()
 				.map(m -> new MoveInfo(m))
-//				.sorted((m1, m2) -> m1.move[0] - m2.move[0])
+				.sorted((m1, m2) -> {
+					if (m1.isCapture)
+						return m2.isCapture ? m2.p.compareTo(m1.p) : 1;
+					if (m2.isCapture)
+						return -1;
+					
+					return m2.p.compareTo(m1.p);
+				})
 				.map(m -> m.move)
 				.toList();
 	}
@@ -1166,6 +1174,7 @@ public class Board {
 		}
 		
 		return 0xFFFF_FFFF_FFFF_FFFFL;
+		// returning a full string makes most bitmasks fail 
 	}
 
 	public boolean isGameOver() {
@@ -1207,7 +1216,7 @@ public class Board {
 			
 			long j = 1L << (dN + dL * 8);
 			
-			if ((enemy & j) != 0 && board[dN + dL * 8].hasMove(ATTACK, d))
+			if (isValidIndex(dN, dL) && (enemy & j) != 0 && board[dN + dL * 8].hasMove(ATTACK, d))
 				return true;
 		}
 		

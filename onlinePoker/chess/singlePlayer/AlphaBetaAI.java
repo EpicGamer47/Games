@@ -17,9 +17,13 @@ public class AlphaBetaAI extends AI {
 	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-			new CoverageRanker(2),
+			new CoverageRanker3(1.5),
 			new ValueRanker(1.5)
 			);
+//	private static final Ranker r = new MultiRanker(
+//			new CoverageRanker(1.75),
+//			new ValueRanker(1.5)
+//			);
 //	private static final Ranker r = new MultiRanker(
 //			new CoverageRanker(1),
 //			new CoverageRanker(.5),
@@ -143,10 +147,10 @@ public class AlphaBetaAI extends AI {
 					pairs.add(p);
 				
 				value = Pair.max(value, p);
-				aa = Pair.max(aa, value);
-				
-				if (value.val >= bb.val)
-					break;
+//				aa = Pair.max(aa, value);
+//				
+//				if (value.val >= bb.val)
+//					break;
 			}
 			
 			return value;
@@ -179,10 +183,10 @@ public class AlphaBetaAI extends AI {
 					pairs.add(p);
 				
 				value = Pair.min(value, p);
-				bb = Pair.min(bb, value);
-				
-				if (value.val <= aa.val)
-					break;
+//				bb = Pair.min(bb, value);
+//				
+//				if (value.val <= aa.val)
+//					break;
 			}
 			
 			return value;
