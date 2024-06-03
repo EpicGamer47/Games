@@ -91,6 +91,15 @@ public class AlphaBetaAI extends AI {
 			
 			this.next = next;
 		}
+		
+		public Pair(Pair next, int[] move, Piece p, boolean isCapture) {
+			this.val = next.val;
+			this.move = move;
+			this.p = p;
+			this.isCapture = isCapture;
+			
+			this.next = next;
+		}
 
 		public static Pair max(Pair a, Pair b) {
 			return a.val > b.val ? a : b;
@@ -110,17 +119,17 @@ public class AlphaBetaAI extends AI {
 				return "";
 			
 			char[] out = new char[4];
-			out[1] = (char) (move[0] + 'a');
-			out[2] = (char) (move[1] + '1');
-			out[3] = (char) (move[2] + 'a');
-			out[4] = (char) (move[3] + '1');
-					
-			if (next == null)
-				return String.valueOf(out);
+			out[0] = (char) (move[0] + 'a');
+			out[1] = (char) (move[1] + '1');
+			out[2] = (char) (move[2] + 'a');
+			out[3] = (char) (move[3] + '1');
 			
 			String prefix = p.getLetter() + (isCapture ? "x" : "");
 			
-			return String.valueOf(out) + ", " + next.moveToString();
+			if (next.move == null)
+				return prefix + String.valueOf(out);
+			
+			return prefix + String.valueOf(out) + ", " + next.moveToString();
 		}
 	}
 	
@@ -163,6 +172,7 @@ public class AlphaBetaAI extends AI {
 //				}
 				
 				var p = b.board[m[0] + m[1] * 8];
+				var isCapture = b.board[m[2] + m[3] * 8] != null;
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 //				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
@@ -178,7 +188,7 @@ public class AlphaBetaAI extends AI {
 //							b.toString());
 				
 				var next = alphaBeta(depth - 1, aa, bb, false);
-				next = new Pair(next, m, p);
+				next = new Pair(next, m, p, isCapture);
 				b.noPushRevert();
 				
 				if (this.depth == depth)
@@ -203,6 +213,7 @@ public class AlphaBetaAI extends AI {
 //				}
 				
 				var p = b.board[m[0] + m[1] * 8];
+				var isCapture = b.board[m[2] + m[3] * 8] != null;
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 //				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
@@ -218,7 +229,7 @@ public class AlphaBetaAI extends AI {
 //							b.toString());
 				
 				var next = alphaBeta(depth - 1, aa, bb, true);
-				next = new Pair(next, m, p);
+				next = new Pair(next, m, p, isCapture);
 				b.noPushRevert();
 				
 				if (this.depth == depth)

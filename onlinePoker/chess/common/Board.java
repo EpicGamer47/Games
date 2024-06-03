@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Stack;
+import java.util.ArrayDeque;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,12 +36,12 @@ public class Board {
 	public int lastDouble;
 	public int movesSinceLastCapture;
 	public int moveCount;
-	public Stack<MoveData> lastMoves;
-	public Stack<MoveData> futureMoves;
+	public ArrayDeque<MoveData> lastMoves;
+	public ArrayDeque<MoveData> futureMoves;
 	
 	public Board() {
-		lastMoves = new Stack<MoveData>();
-		futureMoves = new Stack<MoveData>();
+		lastMoves = new ArrayDeque<MoveData>();
+		futureMoves = new ArrayDeque<MoveData>();
 		reset();
 	}
 	
@@ -61,8 +61,8 @@ public class Board {
 		lastDouble = b.lastDouble;
 		movesSinceLastCapture = b.movesSinceLastCapture;
 		moveCount = b.moveCount;
-		lastMoves = (Stack<MoveData>) b.lastMoves.clone();
-		futureMoves = (Stack<MoveData>) b.futureMoves.clone();
+		lastMoves = (ArrayDeque<MoveData>) b.lastMoves.clone();
+		futureMoves = (ArrayDeque<MoveData>) b.futureMoves.clone();
 	}
 
 	private void reset() {
@@ -763,7 +763,7 @@ public class Board {
 	}
 	
 	public void revert() {
-		if (lastMoves.empty())
+		if (lastMoves.isEmpty())
 			return;
 		
 		var md = lastMoves.pop();
@@ -788,7 +788,7 @@ public class Board {
 	}
 	
 	public void noPushRevert() {
-		if (lastMoves.empty())
+		if (lastMoves.isEmpty())
 			return;
 		
 		var md = lastMoves.pop();
@@ -810,7 +810,7 @@ public class Board {
 	}
 	
 	public void restore() {
-		if (futureMoves.empty())
+		if (futureMoves.isEmpty())
 			return;
 		
 		var md = futureMoves.pop();
