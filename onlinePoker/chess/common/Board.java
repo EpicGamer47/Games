@@ -181,7 +181,7 @@ public class Board {
 				int dN = n + d[0], dL = l + d[1] * sign;
 				
 				if (isValidSpace(p, dN, dL, enemy) &&
-						checkMove(n, l, dN, dL, NORMAL, turn)) {
+						checkMove(n, l, dN, dL, turn, NORMAL)) {
 					for (int ind = 0; ind <= 4; ind++) {
 						out.add(new int[] {n, l, dN, dL + ind * sign});
 					}
@@ -191,7 +191,7 @@ public class Board {
 			for (int[] d : p.attack) {
 				int dN = n + d[0], dL = l + d[1] * sign;
 				
-				if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, turn)) {
+				if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, turn, NORMAL)) {
 					for (int ind = 0; ind <= 4; ind++) {
 						out.add(new int[] {n, l, dN, dL + ind * sign});
 					}
@@ -205,7 +205,7 @@ public class Board {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
 			if (isValidSpace(p, dN, dL, enemy) &&
-					checkMove(n, l, dN, dL, NORMAL, turn))
+					checkMove(n, l, dN, dL, turn, NORMAL))
 				out.add(new int[] {n, l, dN, dL});
 		}
 		
@@ -215,7 +215,7 @@ public class Board {
 			long k = 1L << (iN + iL * 8);
 			
 			while ((exists & k) == 0) {
-				if (checkMove(n, l, iN, iL, NORMAL, turn))
+				if (checkMove(n, l, iN, iL, turn, NORMAL))
 					out.add(new int[] {n, l, iN, iL});
 				
 				iN += d[0];
@@ -223,19 +223,19 @@ public class Board {
 				k = 1L << (iN + iL * 8);
 			}
 			
-			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, NORMAL, turn))
+			if ((enemy & k) != 0  && checkMove(n, l, iN, iL, turn, NORMAL))
 				out.add(new int[] {n, l, iN, iL});
 		}
 		
 		for (int[] d : p.attack) {
 			int dN = n + d[0], dL = l + d[1] * sign;
 			
-			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, NORMAL, turn))
+			if (isValidCapture(dN, dL, enemy) && checkMove(n, l, dN, dL, turn, NORMAL))
 				out.add(new int[] {n, l, dN, dL});	
 		}
 		
 		if (p == PAWN) {
-			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, DOUBLE, turn))
+			if (isDouble(n, l, n, l + 2 * sign) && checkMove(n, l, n, l + 2 * sign, turn, DOUBLE))
 				out.add(new int[] {n, l, n, l + 2 * sign});	
 			
 			if (isEnPassant(n, l, n + 1, l + 1 * sign))
@@ -246,10 +246,10 @@ public class Board {
 		}
 		
 		if (p == KING) {
-			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, CASTLE_KING, turn)) // castle king
+			if (isCastleKing(n, l, 6, l) && checkMove(n, l, 6, l, turn, CASTLE_KING)) // castle king
 				out.add(new int[] {n, l, 6, l});
 			
-			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, CASTLE_QUEEN, turn)) // castle queen
+			if (isCastleQueen(n, l, 2, l) && checkMove(n, l, 2, l, turn, CASTLE_QUEEN)) // castle queen
 				out.add(new int[] {n, l, 2, l});
 		}
 		
@@ -320,7 +320,7 @@ public class Board {
 			break;
 		}
 		
-		if (!checkMove(n, l, dN, dL, move, turn)) {
+		if (!checkMove(n, l, dN, dL, turn, move)) {
 //			System.out.println(String.format("CHECKFAIL %d %d %d %d", n, l, dN, dL));
 			return null;
 		}
@@ -512,7 +512,7 @@ public class Board {
 //			System.out.println(toString(c));
 //			System.out.println(toString(c2));
 		
-		lastMoves.add(out);
+		lastMoves.addFirst(out);
 		futureMoves.clear();
 		moveCount++;
 
@@ -522,6 +522,10 @@ public class Board {
 	public void forceMove(int n, int l, int dN, int dL, boolean turn) {
 		var move = isValidMove(n, l, dN, dL, turn);
 		
+		forceMove(n, l, dN, dL, turn, move);
+	}
+	
+	public void forceMove(int n, int l, int dN, int dL, boolean turn, Move move) {
 		switch (move) {
 		case PROMOTION_B:
 		case PROMOTION_N:
@@ -532,9 +536,6 @@ public class Board {
 		default:
 			break;
 		}
-		
-		long sk1 = 0x7L << (l * 8 + 4); // include king & 2 spaces
-		long sq1 = 0x7L << (l * 8 + 1);
 		
 		long i = 1L << (n + l * 8);
 		long j = 1L << (dN + dL * 8);
@@ -557,13 +558,11 @@ public class Board {
 			
 			if (turn) {
 				black &= ~j;
-				black &= ~i;
 				white &= ~i;
 				white |= j;
 			}
 			else {
 				white &= ~j;
-				white &= ~i;
 				black &= ~i;
 				black |= j;
 			}	
@@ -602,7 +601,7 @@ public class Board {
 			board[l * 8 + 6] = KING;
 			board[l * 8 + 5] = ROOK;
 			
-			sk1 = 0b0110L << (l * 8 + 4);
+			long sk1 = 0b0110L << (l * 8 + 4);
 			long sk2 = 0b1001L << (l * 8 + 4);
 			
 			if (turn) {
@@ -625,7 +624,7 @@ public class Board {
 			board[l * 8 + 2] = KING;
 			board[l * 8 + 3] = ROOK;
 			
-			sq1 = 0b01100L << (l * 8 + 0);
+			long sq1 = 0b01100L << (l * 8 + 0);
 			long sq2 = 0b10001L << (l * 8 + 0);
 			
 			if (turn) {
@@ -711,7 +710,7 @@ public class Board {
 //			System.out.println(toString(c));
 //			System.out.println(toString(c2));
 		
-		lastMoves.add(out);
+		lastMoves.addFirst(out);
 //		futureMoves.clear();
 		moveCount++;
 	}
@@ -784,7 +783,7 @@ public class Board {
 		}
 		moveCount--;
 		
-		futureMoves.add(current);
+		futureMoves.addFirst(current);
 	}
 	
 	public void noPushRevert() {
@@ -831,11 +830,11 @@ public class Board {
 			board[pos.n + pos.l * 8] = pos.p;
 		}
 		
-		lastMoves.add(current);
+		lastMoves.addFirst(current);
 	}
 
 	
-	public boolean checkMove(int n, int l, int dN, int dL, Move move, boolean turn) {
+	public boolean checkMove(int n, int l, int dN, int dL, boolean turn, Move move) {
 		if (!isValidIndex(dN, dL)) {
 			return false;
 		}
@@ -850,7 +849,7 @@ public class Board {
 					!isBeingAttacked(3, l, turn) && 
 					!isBeingAttacked(n, l, turn);
 		default:
-			forceMove(n, l, dN, dL, turn);
+			forceMove(n, l, dN, dL, turn, move);
 			boolean out = !isInCheck(turn);
 			noPushRevert();
 			

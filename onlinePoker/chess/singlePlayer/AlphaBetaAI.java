@@ -171,6 +171,9 @@ public class AlphaBetaAI extends AI {
 //					throw new RuntimeException(Arrays.toString(it.previous()));
 //				}
 				
+				if (!Board.isValidIndex(m[2], m[3]))
+					continue;
+				
 				var p = b.board[m[0] + m[1] * 8];
 				var isCapture = b.board[m[2] + m[3] * 8] != null;
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
