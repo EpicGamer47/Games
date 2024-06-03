@@ -69,27 +69,27 @@ public class Board {
 		board = new Piece[8 * 8];
 		
 		for (int i = 0; i < 8; i++) {
-//			board[i] = row1[i];
+			board[0 * 8 + i] = row1[i];
 			board[1 * 8 + i] = PAWN;
 			board[6 * 8 + i] = PAWN;
-			board[2 * 8 + i] = PAWN;
-			board[5 * 8 + i] = PAWN;
+//			board[2 * 8 + i] = PAWN;
+//			board[5 * 8 + i] = PAWN;
 //			board[3 * 8 + i] = Piece.PAWN;
 //			board[4 * 8 + i] = Piece.PAWN;
-//			board[7 * 8 + i] = row1[i];
+			board[7 * 8 + i] = row1[i];
 		}
 		
-		board[7 * 8 + 4] = KING;
-		board[0 * 8 + 4] = KING;
+//		board[7 * 8 + 4] = KING;
+//		board[0 * 8 + 4] = KING;
 		
-//			black = 0xFFFF_0000_0000_0000L;
+			black = 0xFFFF_0000_0000_0000L;
 //		black = 0xFF00_0000_0000_0000L;
-//			white = 0x0000_0000_0000_FFFFL;
+			white = 0x0000_0000_0000_FFFFL;
 //		black = 0xFF00_00FF_0000_0000L;
 //		white = 0x0000_0000_FF00_00FFL;
 		
-		white = 0x0000_0000_00FF_FF00L | (1L << 0 * 8 + 4);
-		black = 0x00FF_FF00_0000_0000L | (1L << 7 * 8 + 4);
+//		white = 0x0000_0000_00FF_FF00L | (1L << 0 * 8 + 4);
+//		black = 0x00FF_FF00_0000_0000L | (1L << 7 * 8 + 4);
 		
 		exists = black | white;
 		
@@ -519,9 +519,6 @@ public class Board {
 	public void forceMove(int n, int l, int dN, int dL, boolean turn) {
 		var move = isValidMove(n, l, dN, dL, turn);
 		
-		if (move == null)
-			throw new RuntimeException("fuck you");
-		
 		switch (move) {
 		case PROMOTION_B:
 		case PROMOTION_N:
@@ -791,9 +788,6 @@ public class Board {
 		if (lastMoves.empty())
 			return;
 		
-		if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
-			throw new RuntimeException("fuck you1");
-		
 		var md = lastMoves.pop();
 		
 		white = md.white;
@@ -810,9 +804,6 @@ public class Board {
 			board[pos.n + pos.l * 8] = pos.p;
 		}
 		moveCount--;
-		
-		if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
-			throw new RuntimeException("fuck you2");
 	}
 	
 	public void restore() {
@@ -856,19 +847,8 @@ public class Board {
 					!isBeingAttacked(3, l, turn) && 
 					!isBeingAttacked(n, l, turn);
 		default:
-			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
-				throw new RuntimeException("fuck you1");
-			
 			forceMove(n, l, dN, dL, turn);
-			
-			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
-				throw new RuntimeException("fuck you1");
-			
 			boolean out = !isInCheck(turn);
-			
-			if (Long.bitCount(white) + Long.bitCount(black) != Long.bitCount(exists))
-				throw new RuntimeException("fuck you1");
-			
 			noPushRevert();
 			
 			return out;
@@ -1020,6 +1000,7 @@ public class Board {
 			return false;
 		
 		int deltaL = dL - l;
+		int deltaN = dN - n;
 		
 		long i = 1L << (l * 8 + n);
 		long k = 1L << (l * 8 + dN);
@@ -1027,7 +1008,9 @@ public class Board {
 		long enemy = (white & i) != 0 ? black : white;
 		
 		return lastDouble == dN &&
+				((white & i) != 0 ? l == 4 : l == 3) &&
 				deltaL * deltaL == 1 && 
+				deltaN * deltaN == 1 &&
 				(enemy & k) != 0 && board[l * 8 + dN] == PAWN;
 	}
 
@@ -1120,6 +1103,74 @@ public class Board {
 		return coverage(n, l, side, hero, exists);
 	}
 	
+	public long[] coverageSeperated(int n, int l, boolean side) {
+		long i = 1L << (n + l * 8);
+		
+		long hero = side ? white : black;
+		
+		if ((hero & i) == 0)
+			return new long[] {0, 0, 0};
+		
+		long sees = 0L, protects = 0L, attacks = 0L;
+		Piece p = board[l * 8 + n];
+		int sign = side ? 1 : -1;
+		
+		if (p.canMoveAttack) {
+			for (int[] d : p.single) {
+				int dN = n + d[0], dL = l + d[1] * sign;
+				
+				long j = 1L << (dN + dL * 8);
+				
+				if (isValidIndex(dN, dL)) {
+					if ((exists & j) == 0)
+						sees |= j;
+					else if ((hero & j) != 0)
+						protects |= j;
+					else
+						attacks |= j;
+				}
+			}
+		}	
+		
+		for (int[] d : p.repeat) {
+			int iN = n + d[0], iL = l + d[1] * sign;
+			
+			long k = 1L << (iN + iL * 8);
+			
+			while (isValidIndex(iN, iL) && (exists & k) == 0) {
+				sees |= k;
+				
+				iN += d[0];
+				iL += d[1] * sign;
+				k = 1L << (iN + iL * 8);
+			}
+			
+			if (isValidIndex(iN, iL)) { // if isValidIndex, can never see k
+				if ((hero & k) != 0)
+					protects |= k;
+				else
+					attacks |= k;
+			}
+		}
+		
+		for (int[] d : p.attack) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL)) {
+				if ((exists & j) == 0)
+					sees |= j;
+				else if ((hero & j) != 0)
+					protects |= j;
+				else
+					attacks |= j;
+			}
+		}
+		
+		return new long[] {sees, protects, attacks};
+	}
+
 	public long coverage(boolean side, long hero, long exists) {
 		long c = 0L;
 		
@@ -1131,7 +1182,7 @@ public class Board {
 //		return ~findKing(!side);
 	}
 	
-	public long coverage(int n, int l, boolean side, long hero, long exists) {
+	private long coverage(int n, int l, boolean side, long hero, long exists) {
 		long i = 1L << (n + l * 8);
 		
 		if ((hero & i) == 0)
@@ -1257,6 +1308,49 @@ public class Board {
 		int n = k % 8, l = k / 8;
 		
 		return isBeingAttacked(n, l, turn);
+	}
+	
+	public long attackers(int n, int l, boolean turn) {
+		long enemy = turn ? black : white;
+		int sign = turn ? 1 : -1;
+	
+		long attackers = 0L;
+		
+		for (int[] d : AllMoves.single) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL) && (enemy & j) != 0 && 
+					board[dN + dL * 8].canMoveAttack && board[dN + dL * 8].hasMove(SINGLE, d))
+				attackers &= ~j;
+		}
+		
+		for (int[] d : AllMoves.repeat) {
+			int iN = n + d[0], iL = l + d[1];
+			
+			long k = 1L << (iN + iL * 8);
+			
+			while (isValidIndex(iN, iL) && (exists & k) == 0) {
+				iN += d[0];
+				iL += d[1] * sign;
+				k = 1L << (iN + iL * 8);
+			}
+			
+			if (isValidIndex(iN, iL) && (enemy & k) != 0 && board[iN + iL * 8].hasMove(REPEAT, d))
+				attackers &= ~k;
+		}
+		
+		for (int[] d : AllMoves.attack) {
+			int dN = n + d[0], dL = l + d[1] * sign;
+			
+			long j = 1L << (dN + dL * 8);
+			
+			if (isValidIndex(dN, dL) && (enemy & j) != 0 && board[dN + dL * 8].hasMove(ATTACK, d))
+				attackers &= ~j;
+		}
+		
+		return attackers;
 	}
 
 	//DEBUG

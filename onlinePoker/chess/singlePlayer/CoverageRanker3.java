@@ -42,7 +42,7 @@ public class CoverageRanker3 implements Ranker {
 		boolean side = (b.white & i) != 0;
 		
 		int c = Long.bitCount(b.coverage(n, l, side));
-		double dxInt = 46.8;
+		double dxInt = 46.767;
 		
 		double val = -c * (c - dxInt) * (c + dxInt) / (dxInt * dxInt);
 		

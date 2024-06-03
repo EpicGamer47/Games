@@ -50,6 +50,10 @@ public enum Piece {
 		return "/chessSet/" + (color == WHITE ? "w" : "b") + this.toString() + ".svg";
 	}
 	
+	public char getLetter() {
+		return (this == KNIGHT) ? 'N' : name().charAt(0);
+	}
+	
 	public boolean hasMove(int from, int[] move) {
 		int[][] moves;
 		

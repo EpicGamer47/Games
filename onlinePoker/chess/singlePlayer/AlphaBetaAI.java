@@ -7,18 +7,19 @@ import java.util.Arrays;
 import common.AI;
 import common.Board;
 import common.MultiRanker;
+import common.Piece;
 import common.Ranker;
 
 public class AlphaBetaAI extends AI {
-	private static final Pair posI = new Pair(Double.POSITIVE_INFINITY);
-	private static final Pair negI = new Pair(Double.NEGATIVE_INFINITY);
+	private final Pair posI = new Pair(Double.POSITIVE_INFINITY);
+	private final Pair negI = new Pair(Double.NEGATIVE_INFINITY);
 	
 	public static int iterations = 0;
 	private static ArrayList<Pair> pairs = new ArrayList<Pair>();
 	
 	private static final Ranker r = new MultiRanker(
-			new CoverageRanker3(1.5),
-			new ValueRanker(1.5)
+			new CoverageRanker3(1),
+			new ValueRanker(2)
 			);
 //	private static final Ranker r = new MultiRanker(
 //			new CoverageRanker(1.75),
@@ -33,7 +34,7 @@ public class AlphaBetaAI extends AI {
 	
 	public AlphaBetaAI(Board b) {
 		super(b);
-		depth = 10;
+		depth = 5;
 	}
 	
 	public AlphaBetaAI(Board b, int depth) {
@@ -63,17 +64,28 @@ public class AlphaBetaAI extends AI {
 	}
 	
 	@SuppressWarnings("unused")
-	private static class Pair {
+	private class Pair {
 		double val;
 		int[] move;
+		Piece p;
+		Pair next;
 		
 		public Pair(double val) {
 			this.val = val;
 		}
 		
-		public Pair(double val, int[] move) {
+		public Pair(double val, int[] move, Piece p) {
 			this.val = val;
 			this.move = move;
+			this.p = p;
+		}
+		
+		public Pair(Pair next, int[] move, Piece p) {
+			this.val = next.val;
+			this.move = move;
+			this.p = p;
+			
+			this.next = next;
 		}
 
 		public static Pair max(Pair a, Pair b) {
@@ -86,7 +98,24 @@ public class AlphaBetaAI extends AI {
 		
 		@Override
 		public String toString() {
-			return "(" + val + ", " + Arrays.toString(move) + ")";
+			return "(" + val + ", " + moveToString() + ")";
+		}
+		
+		private String moveToString() {
+			if (move == null)
+				return "";
+			
+			char[] out = new char[5];
+			out[0] = p.getLetter();
+			out[1] = (char) (move[0] + 'a');
+			out[2] = (char) (move[1] + '1');
+			out[3] = (char) (move[2] + 'a');
+			out[4] = (char) (move[3] + '1');
+					
+			if (next == null)
+				return String.valueOf(out);
+			
+			return String.valueOf(out) + ", " + next.moveToString();
 		}
 	}
 	
@@ -128,6 +157,7 @@ public class AlphaBetaAI extends AI {
 //					throw new RuntimeException(Arrays.toString(it.previous()));
 //				}
 				
+				var p = b.board[m[0] + m[1] * 8];
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 //				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
@@ -142,18 +172,18 @@ public class AlphaBetaAI extends AI {
 //							Board.toString(b.black) + "\n" + 
 //							b.toString());
 				
-				var p = alphaBeta(depth - 1, aa, bb, false);
+				var next = alphaBeta(depth - 1, aa, bb, false);
+				next = new Pair(next, m, p);
 				b.noPushRevert();
-				p.move = m;
 				
 				if (this.depth == depth)
-					pairs.add(p);
+					pairs.add(next);
 				
-				value = Pair.max(value, p);
-//				aa = Pair.max(aa, value);
-//				
-//				if (value.val >= bb.val)
-//					break;
+				value = Pair.max(value, next);
+				aa = Pair.max(aa, value);
+				
+				if (value.val >= bb.val)
+					break;
 			}
 			
 			return value;
@@ -167,6 +197,7 @@ public class AlphaBetaAI extends AI {
 //					throw new RuntimeException(Arrays.toString(it.previous()));
 //				}
 				
+				var p = b.board[m[0] + m[1] * 8];
 				var d = b.move(m[0], m[1], m[2], m[3], turn);
 				
 //				if (Long.bitCount(b.white) + Long.bitCount(b.black) != Long.bitCount(b.exists))
@@ -181,18 +212,18 @@ public class AlphaBetaAI extends AI {
 //							Board.toString(b.black) + "\n" + 
 //							b.toString());
 				
-				var p = alphaBeta(depth - 1, aa, bb, true);
+				var next = alphaBeta(depth - 1, aa, bb, true);
+				next = new Pair(next, m, p);
 				b.noPushRevert();
-				p.move = m;
 				
 				if (this.depth == depth)
-					pairs.add(p);
+					pairs.add(next);
 				
-				value = Pair.min(value, p);
-//				bb = Pair.min(bb, value);
-//				
-//				if (value.val <= aa.val)
-//					break;
+				value = Pair.min(value, next);
+				bb = Pair.min(bb, value);
+				
+				if (value.val <= aa.val)
+					break;
 			}
 			
 			return value;
