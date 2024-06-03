@@ -1,12 +1,14 @@
 package common;
 
+import java.util.EnumMap;
+
 public enum Piece {
-	PAWN(new int[][] {}, new int[][] {{0, 1}}, new int[][] {{-1, 1}, {1, 1}}, false),
-	KNIGHT(new int[][] {}, new int[][] {{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}}),
+	PAWN(new int[0][], new int[][] {{0, 1}}, new int[][] {{-1, 1}, {1, 1}}, false),
+	KNIGHT(new int[0][], new int[][] {{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}}),
 	BISHOP(new int[][] {{1, 1}, {-1, 1}, {1, -1}, {-1, -1}}),
 	ROOK(new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}),
 	QUEEN(new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}}),
-	KING(new int[][] {}, new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}});
+	KING(new int[0][], new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}});
 	
 	// double as ascii constants
 	public static final int WHITE = 0;
@@ -21,9 +23,22 @@ public enum Piece {
 	public int[][] attack; // only supports single
 	public boolean canMoveAttack;
 	
+	public static EnumMap<Piece, String> cName;
+	
+	static {
+		cName = new EnumMap<Piece, String>(Piece.class);
+		
+		cName.put(PAWN, "");
+		cName.put(KNIGHT, "N");
+		cName.put(BISHOP, "B");
+		cName.put(ROOK, "R");
+		cName.put(QUEEN, "Q");
+		cName.put(KING, "K");
+	}	
+	
 	private Piece(int[][] repeat) {
 		this.repeat = repeat;
-		this.single = new int[][] {};
+		this.single = new int[0][];
 		this.attack = new int[0][];
 		this.canMoveAttack = true;
 	}
@@ -50,8 +65,8 @@ public enum Piece {
 		return "/chessSet/" + (color == WHITE ? "w" : "b") + this.toString() + ".svg";
 	}
 	
-	public char getLetter() {
-		return (this == KNIGHT) ? 'N' : name().charAt(0);
+	public String getLetter() {
+		return cName.get(this);
 	}
 	
 	public boolean hasMove(int from, int[] move) {

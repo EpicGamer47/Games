@@ -69,6 +69,10 @@ public class AlphaBetaAI extends AI {
 		int[] move;
 		Piece p;
 		Pair next;
+		//TODO
+		//TODO
+		//TODO
+		boolean isCapture;
 		
 		public Pair(double val) {
 			this.val = val;
@@ -105,8 +109,7 @@ public class AlphaBetaAI extends AI {
 			if (move == null)
 				return "";
 			
-			char[] out = new char[5];
-			out[0] = p.getLetter();
+			char[] out = new char[4];
 			out[1] = (char) (move[0] + 'a');
 			out[2] = (char) (move[1] + '1');
 			out[3] = (char) (move[2] + 'a');
@@ -114,6 +117,8 @@ public class AlphaBetaAI extends AI {
 					
 			if (next == null)
 				return String.valueOf(out);
+			
+			String prefix = p.getLetter() + (isCapture ? "x" : "");
 			
 			return String.valueOf(out) + ", " + next.moveToString();
 		}

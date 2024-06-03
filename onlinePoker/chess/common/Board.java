@@ -132,7 +132,7 @@ public class Board {
 		return sortMoveList(getAllMoves(n, l, (white & i) != 0));
 	}
 	
-	//TODO
+	//TODO reverse order when makeObviousMoves is implemented
 	public List<int[]> sortMoveList(List<int[]> moves) {
 		return moves.stream()
 				.map(m -> new MoveInfo(m))
@@ -414,6 +414,7 @@ public class Board {
 				black &= ~sk2;
 				black |= sk1;
 			}
+			
 			break;
 		case CASTLE_QUEEN:
 			out.p = new Position[] {from, to, new Position(2, l), new Position(3, l)};
@@ -437,6 +438,7 @@ public class Board {
 				black &= ~sq2;
 				black |= sq1;
 			}
+			
 			break;
 		case PROMOTION_B:
 		case PROMOTION_N:
@@ -460,6 +462,7 @@ public class Board {
 				black &= ~i;
 				black |= j;
 			}
+			
 			break;
 		}
 		
