@@ -8,6 +8,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="blackjack"/>
 	<classpathentry kind="src" path="chess"/>
+	<classpathentry kind="src" path="connect4"/>
 	<classpathentry exported="true" kind="lib" path="libs/core.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
