@@ -5,7 +5,7 @@ import java.util.BitSet;
 import java.util.Scanner;
 
 public class Board {
-	final static int width = 1000, height = 1000;
+	final static int width = 10, height = 10;
 	final static int winLength = 4;
 	final static int[][] offsets = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 	
